@@ -1,0 +1,68 @@
+{
+  "canvas": [
+    192,
+    176
+  ],
+  "ground_pivot": [
+    96,
+    156
+  ],
+  "orientation": "right",
+  "format": "Godot SpriteFrames at art/actors/<role>/frames.tres",
+  "references": "cast.jpg",
+  "roles": [
+    "warden",
+    "seer",
+    "swift",
+    "raider",
+    "brute",
+    "cultist",
+    "headsman"
+  ],
+  "loop": [
+    "idle",
+    "walk"
+  ],
+  "poses": [
+    "jump",
+    "hurt",
+    "down",
+    "dead"
+  ],
+  "moves": {
+    "warden": [
+      "cut",
+      "return",
+      "cleave",
+      "special",
+      "magic"
+    ],
+    "seer": [
+      "spark",
+      "blink",
+      "bolt"
+    ],
+    "swift": [
+      "nick",
+      "cross",
+      "rend",
+      "lunge",
+      "magic"
+    ],
+    "raider": [
+      "jab"
+    ],
+    "brute": [
+      "crush"
+    ],
+    "cultist": [
+      "cast"
+    ],
+    "headsman": [
+      "reap",
+      "jab",
+      "quake"
+    ]
+  },
+  "timing": "scripts/rules.gd MOVES columns 0 and 1 are windup and recovery in seconds. Align first contact to windup."
+}

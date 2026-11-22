@@ -1,0 +1,193 @@
+extends Node2D
+const Rules = preload("res://scripts/rules.gd")
+const Rig = preload("res://scripts/rig.gd")
+var playable:=false
+var kind: String
+var hp: int
+var max_hp: int
+var mana := 100.
+var speed: float
+var face := 1
+var state := "idle"
+var move := ""
+var elapsed := 0.
+var cooldown := 0.
+var invincible := 0.
+var lift := 0.
+var rise := 0.
+var recoil := 0.
+var combo := 0
+var chain := 0.
+var queued := ""
+var buffer := 0.
+var did_hit := false
+var phase_two := false
+var pattern := 0
+var stride := 0.
+var arena
+var rig
+var hurt: Area2D
+var hit: Area2D
+
+func configure(type: String, level):
+	kind = type
+	playable=kind in Rules.HEROES
+	arena = level
+	var data: Array = Rules.UNITS[kind]
+	max_hp = data[0]
+	hp = max_hp
+	speed = data[1]
+	rig = Rig.new()
+	add_child(rig)
+	rig.actor = self
+	rig.install_frames(kind)
+	rig.scale = Vector2.ONE * float(data[2])
+	hurt = box(1 if playable else 2, Vector2(39,24))
+	hit = box(0, Vector2(1,1))
+	hit.collision_mask = 2 if playable else 1
+
+func box(layer: int, dimensions: Vector2) -> Area2D:
+	var area := Area2D.new()
+	var shape := CollisionShape2D.new()
+	var rect := RectangleShape2D.new()
+	rect.size = dimensions
+	shape.shape = rect
+	area.add_child(shape)
+	area.collision_layer = layer
+	area.collision_mask = 0
+	add_child(area)
+	return area
+
+func command(action: String):
+	if hp <= 0: return
+	queued = action
+	buffer = .32
+
+func start_move(action: String):
+	state = "attack"
+	move = action
+	elapsed = 0.
+	did_hit = false
+	var data: Array = Rules.MOVES[move]
+	var radial := move in ["magic","quake","bolt"]
+	var width: float = data[2] * (2. if radial else 1.)
+	hit.get_child(0).shape.size = Vector2(width,data[3]*2.)
+	hit.position.x = 0. if radial else face * width * .5
+
+func step(dt: float, direction: Vector2):
+	elapsed += dt
+	invincible = maxf(0.,invincible-dt)
+	cooldown -= dt
+	chain -= dt
+	buffer -= dt
+	if lift > 0. or rise > 0.:
+		rise -= 800.*dt
+		lift = maxf(0.,lift+rise*dt)
+	position.x += recoil*dt
+	recoil = move_toward(recoil,0.,680.*dt)
+	if state == "dead":
+		modulate.a = clampf(1.7-elapsed,0.,1.)
+	elif state in ["hurt","down"]:
+		if elapsed > (.68 if state=="down" else .24):
+			state = "idle"
+	elif state == "attack":
+		var data: Array = Rules.MOVES[move]
+		if elapsed >= float(data[0]) and not did_hit:
+			did_hit = true
+			arena.strike(self)
+		var ending := float(data[0])+float(data[1])
+		if elapsed >= ending or (playable and move in ["cut","return","nick","cross"] and queued=="attack" and buffer>0 and elapsed>ending-.09):
+			state = "idle"
+			chain = .36
+			cooldown = .43 if phase_two else .70
+	else:
+		if playable:
+			if absf(direction.x)>.1: face = 1 if direction.x>0 else -1
+			if buffer>0:
+				match queued:
+					"jump":
+						if lift<=0.: rise=355.
+					"attack":
+						if chain<=0.: combo=0
+						if kind=="seer": start_move("spark")
+						elif kind=="swift": start_move(["nick","cross","rend"][combo])
+						else: start_move(["cut","return","cleave"][combo])
+						combo=(combo+1)%3
+					"special":
+						if kind=="warden": start_move("special")
+						else:
+							start_move("blink" if kind=="seer" else "lunge")
+							invincible=.30
+							recoil=face*(460. if kind=="seer" else 360.)
+					"magic":
+						if mana>=30:
+							mana-=30
+							start_move("bolt" if kind=="seer" else "magic")
+				buffer=0.
+				queued=""
+			mana = minf(100.,mana+dt*3.5)
+		else:
+			direction = think()
+		if state!="attack":
+			position += direction * Vector2(speed,speed*.66)*dt
+			state = "walk" if direction.length()>.1 else "idle"
+			stride += dt * (9. if state=="walk" else 2.6)
+	position.y = clampf(position.y,332.,461.)
+	position.x = clampf(position.x,arena.left_bound,arena.right_bound)
+	rig.position.y = -lift
+	rig.queue_redraw()
+	queue_redraw()
+
+func think() -> Vector2:
+	var delta_pos: Vector2 = arena.hero.position-position
+	face = 1 if delta_pos.x>=0 else -1
+	var ranged := kind=="cultist"
+	var reach := 245. if ranged else (96. if kind=="headsman" else 58.)
+	var direction := Vector2.ZERO
+	if absf(delta_pos.x)>reach: direction.x = face
+	if ranged and absf(delta_pos.x)<140.: direction.x = -face
+	if absf(delta_pos.y)>9.: direction.y = signf(delta_pos.y)
+	for other in arena.enemies:
+		if other==self or other.hp<=0: continue
+		var separation: Vector2 = position-other.position
+		if separation.length()<45.:
+			direction += separation.normalized()*.85
+	if absf(delta_pos.x)<=reach+12 and absf(delta_pos.y)<23. and cooldown<=0 and arena.hero.hp>0:
+		pattern+=1
+		match kind:
+			"brute": start_move("crush")
+			"cultist": start_move("cast")
+			"headsman": start_move("quake" if pattern%3==0 else ("jab" if phase_two and pattern%2==0 else "reap"))
+			_: start_move("jab")
+	return direction.limit_length()
+
+func damage(amount: int, push: float, knockdown: bool) -> bool:
+	if hp<=0 or invincible>0.: return false
+	hp = maxi(0,hp-amount)
+	phase_two = kind=="headsman" and hp<=max_hp/2
+	recoil = push
+	if hp==0: state="dead"
+	elif kind!="headsman" or state!="attack":
+		state="down" if knockdown else "hurt"
+	if state!="attack": elapsed=0.
+	invincible = (.75 if playable else .16)
+	return true
+
+func _draw():
+	draw_set_transform(Vector2.ZERO,0,Vector2(1,.24))
+	draw_circle(Vector2.ZERO,maxf(14.,32.-lift*.10),Color(0.025,.025,.035,.42))
+
+
+	draw_set_transform(Vector2.ZERO,0,Vector2.ONE)
+	if state=="attack" and not playable and not did_hit:
+		var d:Array=Rules.MOVES[move]
+		var r:float=d[2]
+		var start:float=-r if face<0 or move=="quake" else 0.
+		var span:=r*2 if move=="quake" else r
+		var lane:float=d[3]
+		var danger:=Color(.92,.36,.22,.14)
+		draw_rect(Rect2(start,-lane,span,lane*2.),danger)
+		draw_line(Vector2(start,lane),Vector2(start+span*clampf(elapsed/d[0],0,1),lane),Color(.97,.59,.34,.75),2)
+	if not playable and hp>0 and hp<max_hp and kind!="headsman":
+		draw_rect(Rect2(-18,-132,36,3),Color("#272427"))
+		draw_rect(Rect2(-18,-132,36.*hp/max_hp,3),Color("#d6956f"))
