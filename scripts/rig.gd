@@ -1,6 +1,17 @@
 extends Node2D
 # All joints are authored against a boot pivot. Gameplay volumes live on the parent.
 const R = preload("res://scripts/rules.gd")
+# Keep the shared animation banks resident between waves.
+const FRAME_BANKS = {
+	"brute": preload("res://art/actors/brute/frames.tres"),
+	"cantor": preload("res://art/actors/cantor/frames.tres"),
+	"cultist": preload("res://art/actors/cultist/frames.tres"),
+	"headsman": preload("res://art/actors/headsman/frames.tres"),
+	"raider": preload("res://art/actors/raider/frames.tres"),
+	"seer": preload("res://art/actors/seer/frames.tres"),
+	"swift": preload("res://art/actors/swift/frames.tres"),
+	"warden": preload("res://art/actors/warden/frames.tres"),
+}
 var actor
 var ink := Color("#191b24")
 var steel: Color
@@ -10,10 +21,10 @@ var shift := Vector2.ZERO
 var tilt := 0.
 var mirror := Vector2.ONE
 func install_frames(kind:String):
-	var path := "res://art/actors/%s/frames.tres" % kind
-	if not ResourceLoader.exists(path): return
+	var bank:SpriteFrames=FRAME_BANKS.get(kind)
+	if bank==null: return
 	frames=AnimatedSprite2D.new()
-	frames.sprite_frames=load(path)
+	frames.sprite_frames=bank
 	frames.centered=false
 	frames.position=Vector2(-96,-156)
 	add_child(frames)
