@@ -247,6 +247,17 @@ func step(dt: float, direction: Vector2):
 	rig.queue_redraw()
 	queue_redraw()
 
+# Leave the attack lane before moving toward the far side of the hero.
+func flank_raider(lead) -> Vector2:
+	var hero_pos:Vector2=arena.hero.position
+	var lane_side:=1. if hero_pos.y<396.5 else -1.
+	var flank_y:=hero_pos.y+lane_side*35.
+	if absf(position.y-hero_pos.y)<26.:
+		return Vector2(0,signf(flank_y-position.y))
+	var flank_x:=clampf(hero_pos.x+lead.face*52.,arena.left_bound,arena.right_bound)
+	var flank_offset:=Vector2(flank_x,flank_y)-position
+	return (flank_offset/12.).limit_length()
+
 func think() -> Vector2:
 	var delta_pos: Vector2 = arena.hero.position-position
 	face = 1 if delta_pos.x>=0 else -1
@@ -265,6 +276,8 @@ func think() -> Vector2:
 	if absf(delta_pos.y)>9.: direction.y = signf(delta_pos.y)
 	for other in arena.enemies:
 		if other==self or other.hp<=0: continue
+		if kind=="raider" and absf(delta_pos.x)<120. and other.kind=="raider" and other.state=="attack" and not other.did_hit:
+			return flank_raider(other)
 		var separation: Vector2 = position-other.position
 		if separation.length()<45.:
 			direction += separation.normalized()*.85
