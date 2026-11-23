@@ -6,6 +6,7 @@ var arena
 var panel: Control
 var hud: Control
 var touch
+var touch_controls := DisplayServer.is_touchscreen_available()
 var hero_name:Label
 var buff:Label
 var hp: ProgressBar
@@ -98,7 +99,7 @@ func menu(which:String):
 		panel.remove_child(child)
 		child.queue_free()
 	hud.visible=which=="play"
-	touch.visible=hud.visible and DisplayServer.is_touchscreen_available()
+	touch.visible=hud.visible and touch_controls
 	touch.reset()
 	panel.visible=which!="play"
 	if not panel.visible: return
@@ -130,17 +131,45 @@ func menu(which:String):
 			preview.configure(arena.selected,arena)
 			preview.position=Vector2(722,407)
 			preview.scale=Vector2.ONE*2.35
-		"pause","lost","won":
-			var title:String={"pause":"At rest","lost":"The oath falls","won":"The final silence"}[which]
+		"pause":
+			label(panel,"At rest",52,116,45,ivory,true)
+			label(panel,control_help(),55,187,17,ivory)
+			button(panel,"Resume",55,359,184,arena.pause_game).grab_focus()
+			audio_button(250,359)
+			button(panel,"Restart level",55,413,184,func(): arena.begin(0))
+			button(panel,"Title screen",250,413,150,func(): arena.level_state="title"; menu("title"))
+		"lost","won":
+			var title:String={"lost":"The oath falls","won":"The final silence"}[which]
 			label(panel,title,52,131,45,ivory,true)
-			var msg:String={"pause":"Move: WASD / arrows     Strike: J     Jump: K\nMagic: L     Special / timed counter: Shift\nHold Jump for height. Press Strike in midair.","lost":"Return to the last encounter with restored vitality.","won":"The last bell falls silent. Dawn reaches Cinder Keep."}[which]
+			var msg:String={"lost":"Return to the last encounter with restored vitality.","won":"The last bell falls silent. Dawn reaches Cinder Keep."}[which]
 			label(panel,msg,55,219,18,ivory)
 			if which=="won": label(panel,"Timed counters this run: %d" % arena.counters,55,270,17,gold)
-			if which=="pause":
-				button(panel,"Resume",55,302,184,arena.pause_game).grab_focus()
-				audio_button(250,302)
-			button(panel,"Retry encounter" if which=="lost" else "Restart level",55,362,184,func(): arena.begin(arena.checkpoint,arena.checkpoint_counters) if which=="lost" else arena.begin())
+			if which=="lost":
+				button(panel,"Retry encounter",55,362,184,func(): arena.begin(arena.checkpoint,arena.checkpoint_counters))
+			else:
+				button(panel,"Restart level",55,362,184,func(): arena.begin())
 			button(panel,"Title screen",250,362,150,func(): arena.level_state="title"; menu("title"))
+
+func control_help() -> String:
+	var lines:PackedStringArray
+	if touch_controls:
+		lines.append("Move with the left stick. Tap ATTACK to strike.")
+		lines.append("Tap JUMP to hop or hold it to jump higher.")
+		lines.append("Tap MAGIC to cast. Tap SPECIAL at the flash to counter.")
+		if arena.selected=="warden":
+			lines.append("Shoulder charge: push left or right, center the stick,")
+			lines.append("push that way again and hold. Tap ATTACK as you run.")
+	else:
+		lines.append("Move: WASD / arrows     Strike: J     Jump: K (hold for height)")
+		lines.append("Magic: L     Special / timed counter: Shift")
+		if arena.selected=="warden":
+			lines.append("Shoulder charge: double-tap left or right and hold.")
+			lines.append("Press J once running.")
+	var aerial:String={"warden":"plunge","seer":"rain embers","swift":"dive forward"}[arena.selected]
+	var strike:="Tap ATTACK" if touch_controls else "Press J"
+	lines.append("%s in midair to %s." % [strike,aerial])
+	return "\n".join(lines)
+
 func audio_button(x,y):
 	var b=button(panel,"",x,y,160,func(): arena.sound.toggle(); menu(arena.level_state))
 	b.text="Sound off" if arena.sound.muted else "Sound on"
