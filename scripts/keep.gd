@@ -216,7 +216,7 @@ func shoulder_hit(source) -> bool:
 	var nearest=null
 	var distance:=INF
 	for enemy in enemies:
-		if enemy.hp<=0 or enemy.lift>30: continue
+		if enemy.hp<=0 or enemy.invincible>0. or enemy.lift>30 or source.contact_targets.has(enemy.get_instance_id()): continue
 		var gap:Vector2=enemy.position-source.position
 		var forward:float=gap.x*source.face
 		if forward < -4 or forward>Rules.MOVES.shoulder[2]+19 or absf(gap.y)>Rules.MOVES.shoulder[3]+12: continue
@@ -230,7 +230,10 @@ func shoulder_hit(source) -> bool:
 		sound.play("impact")
 		fx(source.position+Vector2(source.face*25,-65),"impact")
 		shake=4.
-	return true
+		return true
+	# A ward can reject contact on several consecutive active frames.
+	source.contact_targets[nearest.get_instance_id()]=true
+	return false
 
 func opening_cut(source, time:float):
 	var reach:float=(73. if Rules.cut_frame(time)==1 else 96.) * absf(source.rig.scale.y)
@@ -239,11 +242,11 @@ func opening_cut(source, time:float):
 	source.hit.position.x=source.face*reach*.5
 	for target in enemies:
 		var id:int=target.get_instance_id()
-		if source.cut_targets.has(id) or target.hp<=0 or target.lift>40.: continue
+		if source.contact_targets.has(id) or target.hp<=0 or target.lift>40.: continue
 		var body:CollisionShape2D=target.hurt.get_child(0)
 		if not volume.shape.collide(volume.global_transform,body.shape,body.global_transform): continue
 		if not target.damage(source.attack_damage(Rules.MOVES.cut[4]),source.face*145.,false): continue
-		source.cut_targets[id]=true
+		source.contact_targets[id]=true
 		source.impact_hold=Rules.CUT_FREEZE
 		target.impact_hold=Rules.CUT_FREEZE
 		target.cut_reaction=.17
@@ -301,6 +304,10 @@ func strike(source):
 			var damage:int=data[4]
 			if source.kind=="swift" and source.move=="rend" and target.state=="attack": damage+=12
 			if target.damage(source.attack_damage(damage),dir*(200 if data[5] else 90),data[5]):
+				if not radial:
+					var hold:=.050 if data[5] else .033
+					source.impact_hold=maxf(source.impact_hold,hold)
+					target.impact_hold=maxf(target.impact_hold,hold)
 				fx(target.position-Vector2(0,49),"impact")
 				sound.play("impact")
 				shake=4. if data[5] else 2.

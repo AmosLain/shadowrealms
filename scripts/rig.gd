@@ -99,7 +99,9 @@ func draw_frame() -> bool:
 		elif clip=="idle":
 			frames.position.y+=sin(actor.stride)*.9
 		elif clip in ["dead","down"] and actor.kind!="warden":
-			rotation=-actor.face*1.43*smoothstep(0.,.26,actor.elapsed)
+			var fall:=smoothstep(0.,.26,actor.elapsed)
+			rotation=actor.knockback_side*(.18+1.25*fall)
+			if clip=="down": rotation*=1.-smoothstep(.46,.68,actor.elapsed)
 		elif clip=="hurt":
 			if actor.cut_reaction>0.:
 				var weight:float=smoothstep(0.,.17,actor.cut_reaction)

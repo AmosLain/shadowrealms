@@ -48,6 +48,7 @@ func reset_run():
 	run_distance=0.
 	tap_left=0.
 
+var knockback_side := 1.0
 var recoil := 0.
 var combo := 0
 var chain := 0.
@@ -55,7 +56,7 @@ var queued := ""
 var buffer := 0.
 var did_hit := false
 var impact_hold := 0.0
-var cut_targets := {}
+var contact_targets := {}
 var cut_reaction := 0.0
 var phase_two := false
 var pattern := 0
@@ -117,7 +118,7 @@ func start_move(action: String):
 	move = action
 	elapsed = 0.
 	did_hit = false
-	cut_targets.clear()
+	contact_targets.clear()
 	var data: Array = Rules.MOVES[move]
 	var radial := move in ["magic","quake","bolt","plunge"]
 	var width: float = data[2] * (2. if radial else 1.)
@@ -278,6 +279,9 @@ func damage(amount: int, push: float, knockdown: bool) -> bool:
 	reset_run()
 	hp = maxi(0,hp-amount)
 	phase_two = kind in ["headsman","cantor"] and hp<=max_hp/2
+	knockback_side = signf(push) if push != 0. else -float(face)
+	rig.queue_redraw()
+	queue_redraw()
 	recoil = 0.0 if kind=="chime" else push
 	if hp==0: state="dead"
 	elif kind!="headsman" or state!="attack":
