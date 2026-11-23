@@ -155,7 +155,7 @@ func step(dt: float, direction: Vector2):
 		var ready_to_hit := elapsed >= float(data[0]) and (move!="plunge" or lift<=0.)
 		if move=="shoulder":
 			# Drive in the committed lane, then brake even if the input reverses.
-			var velocity_x:=415.*(1.-smoothstep(.22,.44,elapsed))
+			var velocity_x:=465.*lerpf(.22,1.,smoothstep(.025,.09,elapsed))*(1.-smoothstep(.22,.44,elapsed))
 			if shoulder_contact: velocity_x*=.16
 			position.x=clampf(position.x+face*velocity_x*dt,arena.left_bound,arena.right_bound)
 			if ready_to_hit:

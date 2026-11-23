@@ -17,7 +17,7 @@ const AIR_ATTACK = {"warden":"plunge", "seer":"starfall", "swift":"gale"}
 const RUN_TAP_WINDOW := .26
 const RUN_SPEED := 318.0
 const SHOULDER_RUNUP := 18.0
-const ART_CLIP = {"shoulder":"walk","plunge":"cleave","starfall":"spark","gale":"lunge","hook":"jab","fault":"crush"}
+const ART_CLIP = {"plunge":"cleave","starfall":"spark","gale":"lunge","hook":"jab","fault":"crush"}
 const EMBER_SECONDS = 12.0
 # First ground cut: contact poses in the 192 x 176 warden atlas.
 const CUT_EXTENSION := 0.135

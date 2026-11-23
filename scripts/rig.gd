@@ -17,8 +17,61 @@ func install_frames(kind:String):
 	frames.centered=false
 	frames.position=Vector2(-96,-156)
 	add_child(frames)
+# Articulate the tucked-sword pose at the visor, pauldron, belt and boots.
+# Coordinates are in the original atlas cell, with the ground at y=156.
+var tackle_skin: Polygon2D
+var tackle_rest := PackedVector2Array()
+
+func pose_shoulder():
+	if not tackle_skin:
+		var pose:AtlasTexture=frames.sprite_frames.get_frame_texture("cut",0)
+		tackle_skin=Polygon2D.new()
+		tackle_skin.texture=pose.atlas
+		var uv:=PackedVector2Array()
+		var faces:Array[PackedInt32Array]=[]
+		var columns:=[0,67,90,104,116,139,192]
+		for y in [0,54,69,80,94,108,125,143,156,176]:
+			for x in columns:
+				var p:=Vector2(x,y)
+				var i:=tackle_rest.size()
+				tackle_rest.append(p)
+				uv.append(p+pose.region.position)
+				if y>0 and x>0:
+					var above:=i-columns.size()
+					faces.append(PackedInt32Array([above-1,above,i]))
+					faces.append(PackedInt32Array([above-1,i,i-1]))
+		tackle_skin.polygon=tackle_rest
+		tackle_skin.uv=uv
+		tackle_skin.polygons=faces
+		tackle_skin.position=Vector2(-96,-156)
+		add_child(tackle_skin)
+	var t:float=maxf(actor.elapsed,.11) if actor.shoulder_contact else actor.elapsed
+	var brace:=smoothstep(0.,.06,t)*(1.-smoothstep(.29,.46,t))
+	var drive:=smoothstep(.04,.11,t)*(1.-smoothstep(.27,.43,t))
+	var points:=tackle_rest.duplicate()
+	for i in points.size():
+		var p:=tackle_rest[i]
+		var upper:=1.-smoothstep(91.,152.,p.y)
+		var helm:=1.-smoothstep(48.,83.,p.y)
+		var shoulder:=smoothstep(90.,112.,p.x)*(1.-smoothstep(7.,20.,absf(p.y-79.)))
+		var boot:=smoothstep(110.,151.,p.y)
+		var lead:=smoothstep(90.,122.,p.x)
+		points[i].x+=upper*(drive*19.-brace*5.)-helm*brace*4.+shoulder*drive*17.
+		points[i].x+=boot*lerpf(-13.,10.,lead)*drive
+		points[i].y+=upper*(brace*9.+drive*6.)+helm*brace*10.-shoulder*drive*3.
+		points[i].y-=boot*(1.-lead)*sin(PI*drive)*5.
+	tackle_skin.polygon=points
+	tackle_skin.visible=true
+
 func draw_frame() -> bool:
 	if not frames: return false
+	if actor.state=="attack" and actor.move=="shoulder":
+		frames.visible=false
+		scale.x=absf(scale.y)*actor.face
+		rotation=0.
+		pose_shoulder()
+		return true
+	if tackle_skin: tackle_skin.visible=false
 	var clip:String=actor.move if actor.state=="attack" else actor.state
 	clip=R.ART_CLIP.get(clip,clip)
 	if actor.lift>2 and actor.state!="attack": clip="jump"
@@ -32,12 +85,7 @@ func draw_frame() -> bool:
 		frames.rotation=0.
 		frames.self_modulate=Color.WHITE
 		rotation=0.
-		if actor.state=="attack" and actor.move=="shoulder":
-			var drive:=1.-smoothstep(.24,.46,actor.elapsed)
-			frames.frame=1 if drive>.3 else 0
-			rotation=actor.face*.33*drive
-			frames.position.y+=5.*drive
-		elif actor.state=="attack" and count>=4:
+		if actor.state=="attack" and count>=4:
 			var timing:Array=R.MOVES[actor.move]
 			if actor.move in ["gale","plunge"]: rotation=actor.face*(.30 if actor.move=="plunge" else .13)
 			if actor.move=="starfall": rotation=-actor.face*.14
