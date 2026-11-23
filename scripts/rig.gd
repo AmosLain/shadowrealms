@@ -94,6 +94,7 @@ func draw_frame() -> bool:
 		frames.frame=0
 		frames.position=Vector2(-96,-156)
 		frames.rotation=0.
+		frames.scale=Vector2.ONE
 		frames.self_modulate=Color.WHITE
 		rotation=0.
 		if actor.state=="attack" and count>=4:
@@ -103,6 +104,7 @@ func draw_frame() -> bool:
 			if actor.elapsed<timing[0]: frames.frame=0 if actor.elapsed<timing[0]*.28 else 1
 			else: frames.frame=2 if actor.elapsed<timing[0]+timing[1]*.69 else 3
 			if actor.move=="cut": frames.frame=R.cut_frame(actor.elapsed)
+			if actor.move=="hook": pose_hook(timing[0])
 		elif clip=="walk":
 			if actor.run_dir!=0: rotation=actor.face*.12
 			frames.frame=int(actor.stride*.95)%count
@@ -122,6 +124,30 @@ func draw_frame() -> bool:
 			frames.self_modulate=Color(1.35,1.15,.95) if actor.elapsed<.10 else Color.WHITE
 	else: scale.x=absf(scale.y)
 	return frames.visible
+
+# A low guard loads the anti-air sweep. Scale around the boots so the raider
+# stays planted as the strike unwinds, even when facing left.
+func pose_hook(windup:float):
+	var t:float=actor.elapsed
+	var load_weight:=smoothstep(0.,windup*.47,t)
+	var release:=smoothstep(windup-.04,windup+.11,t)
+	var crouch:=load_weight*(1.-release)
+	var extension:=release*(1.-smoothstep(windup+.11,windup+.29,t))
+	if t<windup: frames.frame=0
+	frames.scale=Vector2(1.+.06*crouch,1.-.23*crouch+.05*extension)
+	frames.position=Vector2(-96,-156)*frames.scale
+
+func draw_hook_cue():
+	# Frame the existing pink trajectory with a curved, upward-pointing blade.
+	# The dark edge preserves its silhouette over both sky and torchlight.
+	var tip:=Vector2(71,-116)
+	var path:=PackedVector2Array([Vector2(42,-50),Vector2(53,-63),
+		Vector2(64,-83),tip,Vector2(75,-100)])
+	draw_polyline(path,Color("#352332"),8.,true)
+	draw_polyline(path,Color("#eca8c6"),3.5,true)
+	var progress:=smoothstep(0.,R.MOVES.hook[0],actor.elapsed)
+	var spark:=Vector2(42,-50).bezier_interpolate(Vector2(55,-56),Vector2(68,-90),tip,progress)
+	draw_circle(spark,4.,Color("#fff2df"))
 
 func local(point: Vector2, angle := 0.):
 	draw_set_transform(shift + (point.rotated(tilt)*mirror), (angle+tilt)*mirror.x, mirror)
@@ -148,7 +174,11 @@ func leg(hip: Vector2, foot: Vector2, near_leg: bool):
 	plate([k.x-8,k.y-3,k.x+2,k.y-6,k.x+8,k.y-2,k.x+4,k.y+5,k.x-6,k.y+5],c)
 
 func _draw():
-	if actor==null or draw_frame(): return
+	if actor==null: return
+	if draw_frame():
+		if actor.state=="attack" and actor.move=="hook" and not actor.did_hit:
+			if actor.elapsed<R.MOVES.hook[0]: draw_hook_cue()
+		return
 	if actor.kind=="chime":
 		draw_chime()
 		return
