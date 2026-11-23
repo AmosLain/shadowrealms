@@ -16,6 +16,19 @@ const UNITS = {
 const AIR_ATTACK = {"warden":"plunge", "seer":"starfall", "swift":"gale"}
 const ART_CLIP = {"plunge":"cleave","starfall":"spark","gale":"lunge","hook":"jab","fault":"crush"}
 const EMBER_SECONDS = 12.0
+# First ground cut: contact poses in the 192 x 176 warden atlas.
+const CUT_EXTENSION := 0.135
+const CUT_RELEASE := 0.185
+const CUT_FREEZE := 0.050
+static func cut_frame(t: float) -> int:
+	if t < MOVES.cut[0]: return 0
+	if t < CUT_EXTENSION: return 1
+	if t < CUT_RELEASE: return 2
+	return 3
+
+static func cut_travel(t: float) -> float:
+	return -2.*smoothstep(0.,.06,t) + 16.*smoothstep(.065,CUT_EXTENSION,t) + 3.*smoothstep(CUT_EXTENSION,.225,t)
+
 const MOVES = {
 	"plunge": [.08,.36,110,41,32,true],
 	"starfall": [.13,.25,300,28,17,false],
@@ -31,7 +44,7 @@ const MOVES = {
 	"cross": [.09,.17,91,24,15,false],
 	"rend": [.14,.22,103,29,23,true],
 	"lunge": [.09,.31,98,27,26,true],
-	"cut": [.12,.22,103,25,16,false],
+	"cut": [.10,.24,100,15,16,false],
 	"return": [.10,.25,109,26,19,false],
 	"cleave": [.22,.35,122,32,29,true],
 	"special": [.38,.51,145,40,38,true],

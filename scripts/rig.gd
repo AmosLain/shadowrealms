@@ -38,6 +38,7 @@ func draw_frame() -> bool:
 			if actor.move=="starfall": rotation=-actor.face*.14
 			if actor.elapsed<timing[0]: frames.frame=0 if actor.elapsed<timing[0]*.28 else 1
 			else: frames.frame=2 if actor.elapsed<timing[0]+timing[1]*.69 else 3
+			if actor.move=="cut": frames.frame=R.cut_frame(actor.elapsed)
 		elif clip=="walk":
 			frames.frame=int(actor.stride*.95)%count
 			frames.position.y-=absf(sin(actor.stride))*1.8
@@ -46,7 +47,11 @@ func draw_frame() -> bool:
 		elif clip in ["dead","down"] and actor.kind!="warden":
 			rotation=-actor.face*1.43*smoothstep(0.,.26,actor.elapsed)
 		elif clip=="hurt":
-			rotation=-actor.face*.13
+			if actor.cut_reaction>0.:
+				var weight:float=smoothstep(0.,.17,actor.cut_reaction)
+				rotation=signf(actor.recoil)*.25*weight
+				frames.position.y+=2.*weight
+			else: rotation=-actor.face*.13
 			frames.self_modulate=Color(1.35,1.15,.95) if actor.elapsed<.10 else Color.WHITE
 	else: scale.x=absf(scale.y)
 	return frames.visible

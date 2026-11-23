@@ -29,6 +29,10 @@ On touchscreens use the left stick and the four labeled buttons. Controls scale 
 | Edrin Vey | Lower health, ranged fire lances, evasive step and storm field |
 | Vessa Rill | Fastest movement, paired knife chain, lunging dodge and tide ring. Finish the chain against a winding-up enemy for bonus damage |
 
+## First sword contact
+
+Orra plants her weight, steps into the first cut and follows through. The collision reach extends with the two forward blade poses. Confirmed contact holds just the two fighters for 50 ms, while a miss continues straight into recovery. The cut hits each opponent once. To compare both cases, run `godot --headless --fixed-fps 60 -s res://tests/opening_cut.gd`.
+
 ## Jump combat and ember power
 
 Tap Jump for a short hop or hold it for a high arc. You can steer along either axis and use one aerial strike per jump. Orra plunges down and damages enemies on both sides on landing. Edrin fans three falling embers into adjacent lanes. Vessa dives forward with both blades. On touch, hold or release Jump independently of the stick and Strike.

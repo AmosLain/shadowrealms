@@ -16,6 +16,10 @@ func _draw():
 		for i in 4:
 			var x:float=sin(i*3.7+.5)*p*16.
 			draw_circle(Vector2(x,-p*(3+i)),(1.+p)*1.9,Color(.64,.57,.47,.4*(1.-p)))
+	elif kind=="blade":
+		for i in 6:
+			var ray:=Vector2.from_angle(-.8+i*.27)*Vector2(direction,1.)
+			draw_line(ray*p*35.,ray*(p*35.+12.*(1.-p)),c,2.,true)
 	elif kind=="bolt":
 		for i in 5:
 			var x:float=(i-2)*63.

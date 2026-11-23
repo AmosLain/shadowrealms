@@ -32,6 +32,9 @@ var chain := 0.
 var queued := ""
 var buffer := 0.
 var did_hit := false
+var impact_hold := 0.0
+var cut_targets := {}
+var cut_reaction := 0.0
 var phase_two := false
 var pattern := 0
 var stride := 0.
@@ -90,6 +93,7 @@ func start_move(action: String):
 	move = action
 	elapsed = 0.
 	did_hit = false
+	cut_targets.clear()
 	var data: Array = Rules.MOVES[move]
 	var radial := move in ["magic","quake","bolt","plunge"]
 	var width: float = data[2] * (2. if radial else 1.)
@@ -97,8 +101,14 @@ func start_move(action: String):
 	hit.position.x = 0. if radial else face * width * .5
 
 func step(dt: float, direction: Vector2):
-	elapsed += dt
 	ember_time=maxf(0.,ember_time-dt)
+	if impact_hold>0.:
+		var held:=minf(dt,impact_hold)
+		impact_hold-=held
+		dt-=held
+		if dt<=0.000001: return
+	cut_reaction=move_toward(cut_reaction,0.,dt)
+	elapsed += dt
 	invincible = maxf(0.,invincible-dt)
 	cooldown -= dt
 	chain -= dt
@@ -118,7 +128,15 @@ func step(dt: float, direction: Vector2):
 	elif state == "attack":
 		var data: Array = Rules.MOVES[move]
 		var ready_to_hit := elapsed >= float(data[0]) and (move!="plunge" or lift<=0.)
-		if ready_to_hit and not did_hit:
+		if move=="cut":
+			var previous:=elapsed-dt
+			var travel:=Rules.cut_travel(elapsed)-Rules.cut_travel(previous)
+			position.x=clampf(position.x+face*travel,arena.left_bound,arena.right_bound)
+			if ready_to_hit and previous<Rules.CUT_RELEASE:
+				if not did_hit: arena.sound.play("swing")
+				did_hit=true
+				arena.opening_cut(self,minf(elapsed,Rules.CUT_RELEASE-.0001))
+		elif ready_to_hit and not did_hit:
 			did_hit = true
 			arena.strike(self)
 			if move=="plunge": elapsed=data[0]

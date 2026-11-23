@@ -209,7 +209,33 @@ func chimes_alive() -> bool:
 		if enemy.kind=="chime" and enemy.hp>0: return true
 	return false
 
+func opening_cut(source, time:float):
+	var reach:float=(73. if Rules.cut_frame(time)==1 else 96.) * absf(source.rig.scale.y)
+	var volume:CollisionShape2D=source.hit.get_child(0)
+	volume.shape.size=Vector2(reach,Rules.MOVES.cut[3]*2.)
+	source.hit.position.x=source.face*reach*.5
+	for target in enemies:
+		var id:int=target.get_instance_id()
+		if source.cut_targets.has(id) or target.hp<=0 or target.lift>40.: continue
+		var body:CollisionShape2D=target.hurt.get_child(0)
+		if not volume.shape.collide(volume.global_transform,body.shape,body.global_transform): continue
+		if not target.damage(source.attack_damage(Rules.MOVES.cut[4]),source.face*145.,false): continue
+		source.cut_targets[id]=true
+		source.impact_hold=Rules.CUT_FREEZE
+		target.impact_hold=Rules.CUT_FREEZE
+		target.cut_reaction=.17
+		target.rig.queue_redraw()
+		var along:float=clampf((target.position.x-source.position.x)*source.face-8.,0.,reach)
+		var point:Vector2=source.position+Vector2(along*source.face,-74.*absf(source.rig.scale.y))
+		fx(point,"blade",source.face)
+		sound.play("impact")
+		shake=1.5
+
 func strike(source):
+	if source.move=="cut":
+		if source.elapsed>=Rules.MOVES.cut[0] and source.elapsed<Rules.CUT_RELEASE:
+			opening_cut(source,source.elapsed)
+		return
 	var data: Array=Rules.MOVES[source.move]
 	if source.move=="toll":
 		var rune=preload("res://scripts/toll.gd").new()
@@ -266,9 +292,10 @@ func launch_volley(source):
 		moving_shots.append(shot)
 	sound.play("magic" if falling else "impact")
 
-func fx(p: Vector2,type: String):
+func fx(p: Vector2,type: String,facing:=1):
 	var e=Effect.new()
 	e.kind=type
+	e.direction=facing
 	e.position=p
 	e.z_index=3
 	road.add_child(e)
