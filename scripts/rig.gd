@@ -32,7 +32,12 @@ func draw_frame() -> bool:
 		frames.rotation=0.
 		frames.self_modulate=Color.WHITE
 		rotation=0.
-		if actor.state=="attack" and count>=4:
+		if actor.state=="attack" and actor.move=="shoulder":
+			var drive:=1.-smoothstep(.24,.46,actor.elapsed)
+			frames.frame=1 if drive>.3 else 0
+			rotation=actor.face*.33*drive
+			frames.position.y+=5.*drive
+		elif actor.state=="attack" and count>=4:
 			var timing:Array=R.MOVES[actor.move]
 			if actor.move in ["gale","plunge"]: rotation=actor.face*(.30 if actor.move=="plunge" else .13)
 			if actor.move=="starfall": rotation=-actor.face*.14
@@ -40,6 +45,7 @@ func draw_frame() -> bool:
 			else: frames.frame=2 if actor.elapsed<timing[0]+timing[1]*.69 else 3
 			if actor.move=="cut": frames.frame=R.cut_frame(actor.elapsed)
 		elif clip=="walk":
+			if actor.run_dir!=0: rotation=actor.face*.12
 			frames.frame=int(actor.stride*.95)%count
 			frames.position.y-=absf(sin(actor.stride))*1.8
 		elif clip=="idle":

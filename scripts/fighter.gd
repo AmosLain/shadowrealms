@@ -26,6 +26,28 @@ func release_jump():
 
 func attack_damage(base:int) -> int:
 	return roundi(base * 1.5) if ember_time > 0. else base
+var last_tap := 0
+var tap_left := 0.0
+var run_dir := 0
+var run_distance := 0.0
+var shoulder_contact := false
+
+func tap_horizontal(dir:int):
+	if kind!="warden" or hp<=0 or lift>0 or state not in ["idle","walk"]: return
+	if dir==last_tap and tap_left>0:
+		run_dir=dir
+		run_distance=0.
+		tap_left=0.
+	else:
+		run_dir=0
+		last_tap=dir
+		tap_left=Rules.RUN_TAP_WINDOW
+
+func reset_run():
+	run_dir=0
+	run_distance=0.
+	tap_left=0.
+
 var recoil := 0.
 var combo := 0
 var chain := 0.
@@ -89,6 +111,8 @@ func command(action: String):
 	buffer = .32
 
 func start_move(action: String):
+	reset_run()
+	shoulder_contact=false
 	state = "attack"
 	move = action
 	elapsed = 0.
@@ -101,6 +125,7 @@ func start_move(action: String):
 	hit.position.x = 0. if radial else face * width * .5
 
 func step(dt: float, direction: Vector2):
+	tap_left=maxf(0.,tap_left-dt)
 	ember_time=maxf(0.,ember_time-dt)
 	if impact_hold>0.:
 		var held:=minf(dt,impact_hold)
@@ -128,7 +153,17 @@ func step(dt: float, direction: Vector2):
 	elif state == "attack":
 		var data: Array = Rules.MOVES[move]
 		var ready_to_hit := elapsed >= float(data[0]) and (move!="plunge" or lift<=0.)
-		if move=="cut":
+		if move=="shoulder":
+			# Drive in the committed lane, then brake even if the input reverses.
+			var velocity_x:=415.*(1.-smoothstep(.22,.44,elapsed))
+			if shoulder_contact: velocity_x*=.16
+			position.x=clampf(position.x+face*velocity_x*dt,arena.left_bound,arena.right_bound)
+			if ready_to_hit:
+				if not did_hit: arena.sound.play("swing")
+				did_hit=true
+				if not shoulder_contact and elapsed<=.30:
+					shoulder_contact=arena.shoulder_hit(self)
+		elif move=="cut":
 			var previous:=elapsed-dt
 			var travel:=Rules.cut_travel(elapsed)-Rules.cut_travel(previous)
 			position.x=clampf(position.x+face*travel,arena.left_bound,arena.right_bound)
@@ -147,8 +182,10 @@ func step(dt: float, direction: Vector2):
 			cooldown = 3.0 if kind=="chime" else (.43 if phase_two else .70)
 	else:
 		if playable:
+			if run_dir!=0 and direction.x*run_dir<.45: run_dir=0
 			if absf(direction.x)>.1: face = 1 if direction.x>0 else -1
 			if jump_buffer>0. and lift<=0. and rise<=0.:
+				reset_run()
 				rise=390. if jump_held else 170.
 				jump_buffer=0.
 			var taking_off := rise>0. and lift<=0.
@@ -163,6 +200,9 @@ func step(dt: float, direction: Vector2):
 								if move=="gale":
 									recoil=face*500.
 									rise=minf(rise,-80.)
+						elif run_dir!=0 and run_distance>=Rules.SHOULDER_RUNUP:
+							start_move("shoulder")
+							combo=0
 						else:
 							if chain<=0.: combo=0
 							if kind=="seer": start_move("spark")
@@ -186,9 +226,13 @@ func step(dt: float, direction: Vector2):
 		else:
 			direction = think()
 		if state!="attack":
-			position += direction * Vector2(speed,speed*.66)*dt
+			var previous_x:=position.x
+			var pace:=Rules.RUN_SPEED if run_dir!=0 else speed
+			position += direction * Vector2(pace,speed*.66)*dt
+			if run_dir!=0:
+				run_distance+=absf(clampf(position.x,arena.left_bound,arena.right_bound)-previous_x)
 			state = "walk" if direction.length()>.1 else "idle"
-			stride += dt * (9. if state=="walk" else 2.6)
+			stride += dt * (14. if run_dir!=0 else (9. if state=="walk" else 2.6))
 	position.y = clampf(position.y,332.,461.)
 	position.x = clampf(position.x,arena.left_bound,arena.right_bound)
 	rig.position.y = -lift
@@ -231,6 +275,7 @@ func damage(amount: int, push: float, knockdown: bool) -> bool:
 	if kind=="cantor" and arena.chimes_alive():
 		arena.fx(position-Vector2(0,61),"counter")
 		return false
+	reset_run()
 	hp = maxi(0,hp-amount)
 	phase_two = kind in ["headsman","cantor"] and hp<=max_hp/2
 	recoil = 0.0 if kind=="chime" else push

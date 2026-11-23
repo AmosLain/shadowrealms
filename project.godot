@@ -2,7 +2,7 @@ config_version=5
 [application]
 config/name="Shadow Realms"
 config/icon="res://art/crest.png"
-config/version="0.3.1"
+config/version="0.4.0"
 run/main_scene="res://scenes/Keep.tscn"
 config/features=PackedStringArray("4.3", "GL Compatibility")
 [display]

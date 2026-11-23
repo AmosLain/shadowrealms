@@ -156,7 +156,7 @@ func refresh():
 	if arena.counter_notice>0:
 		hint.text="Counter!   +15 magic"
 	elif arena.hero.position.x<398 and arena.wave<0:
-		hint.text="Hold Jump for height. Strike in midair."
+		hint.text="Double-tap a direction, hold, then Strike." if arena.selected=="warden" else "Hold Jump for height. Strike in midair."
 	elif arena.locked and arena.wave==0:
 		hint.text="Face the flash. Special to counter."
 	elif arena.locked and arena.wave==1:

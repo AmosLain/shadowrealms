@@ -29,6 +29,10 @@ On touchscreens use the left stick and the four labeled buttons. Controls scale 
 | Edrin Vey | Lower health, ranged fire lances, evasive step and storm field |
 | Vessa Rill | Fastest movement, paired knife chain, lunging dodge and tide ring. Finish the chain against a winding-up enemy for bonus damage |
 
+## Orra's running shoulder
+
+Double-tap left or right and hold the second press. On touch, push the stick sideways, return it to center, then push and hold in the same direction. After a short run-up, press Strike to commit to a shoulder charge. A grounded enemy in your lane is knocked back. A miss carries Orra forward before she brakes. Releasing the direction ends the run. Striking from a standstill uses her normal blade chain.
+
 ## First sword contact
 
 Orra plants her weight, steps into the first cut and follows through. The collision reach extends with the two forward blade poses. Confirmed contact holds just the two fighters for 50 ms, while a miss continues straight into recovery. The cut hits each opponent once. To compare both cases, run `godot --headless --fixed-fps 60 -s res://tests/opening_cut.gd`.

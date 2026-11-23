@@ -45,6 +45,8 @@ func _unhandled_input(event):
 	if event.is_action_pressed("pause") and level_state in ["play","pause"]:
 		pause_game()
 	elif level_state=="play":
+		if event.is_action_pressed("left"): hero.tap_horizontal(-1)
+		if event.is_action_pressed("right"): hero.tap_horizontal(1)
 		if event.is_action_released("jump"): hero.release_jump()
 		for action in ["attack","jump","magic","special"]:
 			if event.is_action_pressed(action): hero.command(action)
@@ -52,6 +54,7 @@ func _unhandled_input(event):
 func pause_game():
 	if level_state=="play":
 		hero.release_jump()
+		hero.reset_run()
 		level_state="pause"
 		ui.menu("pause")
 	elif level_state=="pause":
@@ -208,6 +211,26 @@ func chimes_alive() -> bool:
 	for enemy in enemies:
 		if enemy.kind=="chime" and enemy.hp>0: return true
 	return false
+
+func shoulder_hit(source) -> bool:
+	var nearest=null
+	var distance:=INF
+	for enemy in enemies:
+		if enemy.hp<=0 or enemy.lift>30: continue
+		var gap:Vector2=enemy.position-source.position
+		var forward:float=gap.x*source.face
+		if forward < -4 or forward>Rules.MOVES.shoulder[2]+19 or absf(gap.y)>Rules.MOVES.shoulder[3]+12: continue
+		if forward<distance:
+			distance=forward
+			nearest=enemy
+	if nearest==null: return false
+	if nearest.damage(source.attack_damage(Rules.MOVES.shoulder[4]),source.face*315.,true):
+		source.impact_hold=.05
+		nearest.impact_hold=.05
+		sound.play("impact")
+		fx(source.position+Vector2(source.face*25,-65),"impact")
+		shake=4.
+	return true
 
 func opening_cut(source, time:float):
 	var reach:float=(73. if Rules.cut_frame(time)==1 else 96.) * absf(source.rig.scale.y)

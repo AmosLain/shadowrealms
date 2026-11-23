@@ -2,6 +2,7 @@ extends Control
 var arena
 var finger:=-1
 var jump_finger:=-1
+var stick_side:=0
 var knob:=Vector2.ZERO
 const ORIGIN=Vector2(97,447)
 const BUTTONS={"attack":Vector2(874,437),"jump":Vector2(806,482),"magic":Vector2(798,398),"special":Vector2(906,349)}
@@ -26,6 +27,7 @@ func _input(event):
 			arena.hero.release_jump()
 	elif event is InputEventScreenDrag and event.index==finger: drag(event.position)
 func reset():
+	stick_side=0
 	if jump_finger>=0 and arena.hero: arena.hero.release_jump()
 	jump_finger=-1
 	finger=-1
@@ -34,6 +36,10 @@ func reset():
 	queue_redraw()
 func drag(p:Vector2):
 	knob=(p-ORIGIN).limit_length(48)
+	if absf(knob.x)>=27 and (stick_side==0 or signf(knob.x)!=stick_side):
+		stick_side=int(signf(knob.x))
+		arena.hero.tap_horizontal(stick_side)
+	elif absf(knob.x)<12: stick_side=0
 	arena.touch_vector=knob/48.
 	queue_redraw()
 func _draw():
