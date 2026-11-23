@@ -139,7 +139,7 @@ func menu(which:String):
 			if which=="pause":
 				button(panel,"Resume",55,302,184,arena.pause_game).grab_focus()
 				audio_button(250,302)
-			button(panel,"Retry encounter" if which=="lost" else "Restart level",55,362,184,func(): arena.begin(arena.checkpoint if which=="lost" else 0))
+			button(panel,"Retry encounter" if which=="lost" else "Restart level",55,362,184,func(): arena.begin(arena.checkpoint,arena.checkpoint_counters) if which=="lost" else arena.begin())
 			button(panel,"Title screen",250,362,150,func(): arena.level_state="title"; menu("title"))
 func audio_button(x,y):
 	var b=button(panel,"",x,y,160,func(): arena.sound.toggle(); menu(arena.level_state))

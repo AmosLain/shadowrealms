@@ -13,3 +13,7 @@ The raider lowers its stance before its anti-air hook. A rising glint follows th
 ## Thumbstick precision
 
 A thumb displaced six pixels from center previously changed facing and moved the hero. The stick now remaps its inner eight pixels to rest and ramps continuously to full speed. Viewport-dispatched touch tests passed 5/5, resume passed 4/4 and shoulder controls passed 17/17.
+
+## Checkpoint score
+
+Continue now restores the timed counters banked at the last cleared gate. Retrying discards counters from the failed attempt. New runs start at zero, and an existing two-field checkpoint still loads. The fresh-scene regression failed on resume and retry beforehand and passed all five checks afterward.

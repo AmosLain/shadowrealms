@@ -16,6 +16,7 @@ var counter_notice := 0.0
 var dust_timer:=0.
 var wave:=-1
 var checkpoint:=0
+var checkpoint_counters:=0
 var selected:="warden"
 var locked:=false
 var left_bound:=10.
@@ -71,13 +72,15 @@ func read_journey() -> Dictionary:
 	var role=cfg.get_value("journey","role","")
 	var stage=cfg.get_value("journey","gate",-1)
 	if role not in Rules.HEROES or typeof(stage)!=TYPE_INT or stage<0 or stage>=Rules.GATES.size(): return {}
-	return {"role":role,"stage":stage}
+	var count=cfg.get_value("journey","counters",0)
+	return {"role":role,"stage":stage,"counters":maxi(0,count) if typeof(count)==TYPE_INT else 0}
 
 func save_journey():
 	if save_path.is_empty(): return
 	var cfg:=ConfigFile.new()
 	cfg.set_value("journey","role",selected)
 	cfg.set_value("journey","gate",checkpoint)
+	cfg.set_value("journey","counters",checkpoint_counters)
 	if cfg.save(save_path+".tmp")==OK:
 		DirAccess.rename_absolute(save_path+".tmp",save_path)
 
@@ -85,11 +88,12 @@ func resume_journey():
 	var slot:=read_journey()
 	if slot.is_empty(): return
 	selected=slot.role
-	begin(slot.stage)
+	begin(slot.stage,slot.counters)
 
-func begin(stage:=0):
+func begin(stage:=0, banked_counters:=0):
 	counter_notice = 0.0
-	counters = 0
+	counters = banked_counters
+	checkpoint_counters = banked_counters
 	for vent in $Floor.get_children():
 		$Floor.remove_child(vent)
 		vent.queue_free()
@@ -183,6 +187,7 @@ func _physics_process(dt):
 			drop(hero.position+Vector2(86,6),"mana")
 			if wave in [0,2,4]: drop(hero.position+Vector2(125,-4),"ember")
 			checkpoint=wave+1
+			checkpoint_counters=counters
 			save_journey()
 			left_bound=maxf(10.,Rules.GATES[wave]-330.)
 			right_bound=Rules.END_X
