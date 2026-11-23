@@ -60,6 +60,12 @@ func run():
 			if absf(gap.x)<(246 if h.kind=="seer" else 98) and absf(gap.y)<30:
 				if frame%8==0:
 					tap("magic" if frame%152==0 and h.mana>=30 else ("special" if frame%104==0 else "attack"))
+		if h.state in ["idle","walk"] and h.lift<=0 and h.rise<=0:
+			for shot in game.shots:
+				var gap:Vector2=h.position-shot[0].position
+				if not shot[3] and gap.x*shot[1]>20 and gap.x*shot[1]<96 and absf(gap.y)<24:
+					tap("jump")
+					break
 		for mark in game.get_node("Floor").get_children():
 			if mark is Toll and not mark.released and ((h.position-mark.position)/mark.RADIUS).length()<1.15:
 				aim=Vector2(0,1 if mark.position.y<397 else -1)

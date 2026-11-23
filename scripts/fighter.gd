@@ -15,6 +15,17 @@ var cooldown := 0.
 var invincible := 0.
 var lift := 0.
 var rise := 0.
+var jump_held := false
+var jump_buffer := 0.0
+var air_spent := false
+var ember_time := 0.0
+
+func release_jump():
+	jump_held = false
+	if rise > 170.: rise = 170.
+
+func attack_damage(base:int) -> int:
+	return roundi(base * 1.5) if ember_time > 0. else base
 var recoil := 0.
 var combo := 0
 var chain := 0.
@@ -67,6 +78,10 @@ func can_be_countered_by(attacker) -> bool:
 
 func command(action: String):
 	if hp <= 0: return
+	if action=="jump":
+		jump_held=true
+		jump_buffer=.16
+		return
 	queued = action
 	buffer = .32
 
@@ -76,20 +91,23 @@ func start_move(action: String):
 	elapsed = 0.
 	did_hit = false
 	var data: Array = Rules.MOVES[move]
-	var radial := move in ["magic","quake","bolt"]
+	var radial := move in ["magic","quake","bolt","plunge"]
 	var width: float = data[2] * (2. if radial else 1.)
 	hit.get_child(0).shape.size = Vector2(width,data[3]*2.)
 	hit.position.x = 0. if radial else face * width * .5
 
 func step(dt: float, direction: Vector2):
 	elapsed += dt
+	ember_time=maxf(0.,ember_time-dt)
 	invincible = maxf(0.,invincible-dt)
 	cooldown -= dt
 	chain -= dt
 	buffer -= dt
+	jump_buffer -= dt
 	if lift > 0. or rise > 0.:
 		rise -= 800.*dt
 		lift = maxf(0.,lift+rise*dt)
+	if lift<=0.: air_spent=false
 	position.x += recoil*dt
 	recoil = move_toward(recoil,0.,680.*dt)
 	if state == "dead":
@@ -99,27 +117,40 @@ func step(dt: float, direction: Vector2):
 			state = "idle"
 	elif state == "attack":
 		var data: Array = Rules.MOVES[move]
-		if elapsed >= float(data[0]) and not did_hit:
+		var ready_to_hit := elapsed >= float(data[0]) and (move!="plunge" or lift<=0.)
+		if ready_to_hit and not did_hit:
 			did_hit = true
 			arena.strike(self)
+			if move=="plunge": elapsed=data[0]
 		var ending := float(data[0])+float(data[1])
-		if elapsed >= ending or (playable and move in ["cut","return","nick","cross"] and queued=="attack" and buffer>0 and elapsed>ending-.09):
+		if (did_hit and elapsed >= ending) or (playable and move in ["cut","return","nick","cross"] and queued=="attack" and buffer>0 and elapsed>ending-.09):
 			state = "idle"
 			chain = .36
 			cooldown = 3.0 if kind=="chime" else (.43 if phase_two else .70)
 	else:
 		if playable:
 			if absf(direction.x)>.1: face = 1 if direction.x>0 else -1
-			if buffer>0:
+			if jump_buffer>0. and lift<=0. and rise<=0.:
+				rise=390. if jump_held else 170.
+				jump_buffer=0.
+			var taking_off := rise>0. and lift<=0.
+			if buffer>0 and not (taking_off and queued=="attack"):
 				match queued:
-					"jump":
-						if lift<=0.: rise=355.
 					"attack":
-						if chain<=0.: combo=0
-						if kind=="seer": start_move("spark")
-						elif kind=="swift": start_move(["nick","cross","rend"][combo])
-						else: start_move(["cut","return","cleave"][combo])
-						combo=(combo+1)%3
+						if lift>0.:
+							if not air_spent:
+								air_spent=true
+								start_move(Rules.AIR_ATTACK[kind])
+								if move=="plunge": rise=-360.
+								if move=="gale":
+									recoil=face*500.
+									rise=minf(rise,-80.)
+						else:
+							if chain<=0.: combo=0
+							if kind=="seer": start_move("spark")
+							elif kind=="swift": start_move(["nick","cross","rend"][combo])
+							else: start_move(["cut","return","cleave"][combo])
+							combo=(combo+1)%3
 					"special":
 						arena.counter(self)
 						if kind=="warden": start_move("special")
@@ -155,6 +186,9 @@ func think() -> Vector2:
 		return Vector2.ZERO
 	var ranged := kind in ["cultist","cantor"]
 	var reach := 245. if ranged else (96. if kind=="headsman" else 58.)
+	if kind=="brute" and cooldown<=0 and absf(delta_pos.x)>100 and absf(delta_pos.x)<228 and absf(delta_pos.y)<22 and arena.hero.hp>0:
+		start_move("fault")
+		return Vector2.ZERO
 	var direction := Vector2.ZERO
 	if absf(delta_pos.x)>reach: direction.x = face
 	if ranged and absf(delta_pos.x)<140.: direction.x = -face
@@ -171,7 +205,7 @@ func think() -> Vector2:
 			"cultist": start_move("cast")
 			"cantor": start_move("toll" if pattern%3==1 else ("peal" if phase_two or pattern%2==0 else "cast"))
 			"headsman": start_move("quake" if pattern%3==0 else ("jab" if phase_two and pattern%2==0 else "reap"))
-			_: start_move("jab")
+			_: start_move("hook" if pattern%2==0 else "jab")
 	return direction.limit_length()
 
 func damage(amount: int, push: float, knockdown: bool) -> bool:
@@ -203,6 +237,8 @@ func _draw():
 		var lane:float=d[3]
 		if move in ["jab","crush","reap"] and float(d[0])-elapsed<=0.22:
 			draw_arc(Vector2(0,-118),13,-PI,PI,24,Color("#b7fff0"),3,true)
+		if move=="hook":
+			draw_line(Vector2(face*42,-45),Vector2(face*63,-103),Color("#f3a7d7"),3.,true)
 		var danger:=Color(.92,.36,.22,.14)
 		draw_rect(Rect2(start,-lane,span,lane*2.),danger)
 		draw_line(Vector2(start,lane),Vector2(start+span*clampf(elapsed/d[0],0,1),lane),Color(.97,.59,.34,.75),2)

@@ -29,6 +29,12 @@ On touchscreens use the left stick and the four labeled buttons. Controls scale 
 | Edrin Vey | Lower health, ranged fire lances, evasive step and storm field |
 | Vessa Rill | Fastest movement, paired knife chain, lunging dodge and tide ring. Finish the chain against a winding-up enemy for bonus damage |
 
+## Jump combat and ember power
+
+Tap Jump for a short hop or hold it for a high arc. You can steer along either axis and use one aerial strike per jump. Orra plunges down and damages enemies on both sides on landing. Edrin fans three falling embers into adjacent lanes. Vessa dives forward with both blades. On touch, hold or release Jump independently of the stick and Strike.
+
+At medium range the brute can break the ground, sending low stone spikes toward you. Jump them or leave their lane. A raider alternates its jab with a rising hook that can catch airborne heroes. Step sideways during the pink upward warning. Collect the golden ember after the first, third or fifth encounter for twelve seconds of +50% attack damage. The HUD counts down the remaining time. Picking up another refreshes the duration.
+
 ## Android debug build
 
 Install the export templates matching Godot 4.7.2 from **Editor → Manage Export Templates**. Install OpenJDK 17 and the Android SDK command-line tools. From the SDK tools directory, install the required packages, substituting the actual SDK location for SDK_ROOT.

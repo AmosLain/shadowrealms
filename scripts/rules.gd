@@ -13,7 +13,15 @@ const UNITS = {
 	"headsman": [250, 91, 1.46, "dba96d", "662c39"]
 }
 # windup, recovery, reach, lane tolerance, damage, knockdown
+const AIR_ATTACK = {"warden":"plunge", "seer":"starfall", "swift":"gale"}
+const ART_CLIP = {"plunge":"cleave","starfall":"spark","gale":"lunge","hook":"jab","fault":"crush"}
+const EMBER_SECONDS = 12.0
 const MOVES = {
+	"plunge": [.08,.36,110,41,32,true],
+	"starfall": [.13,.25,300,28,17,false],
+	"gale": [.10,.23,112,25,24,false],
+	"hook": [.62,.58,90,17,14,false],
+	"fault": [.78,.84,248,22,17,true],
 	"toll": [.42,.87,320,25,18,false],
 	"peal": [.88,.90,340,20,12,false],
 	"spark": [.16,.26,360,24,19,false],

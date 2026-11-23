@@ -7,6 +7,7 @@ var panel: Control
 var hud: Control
 var touch
 var hero_name:Label
+var buff:Label
 var hp: ProgressBar
 var mp: ProgressBar
 var boss: ProgressBar
@@ -29,6 +30,7 @@ func setup(level):
 	add_child(touch)
 	box(hud,18,18,269,76,Color("#192329e8"))
 	hero_name=label(hud,"ORRA VENN",33,24,18,ivory,true)
+	buff=label(hud,"",33,93,16,gold)
 	hp=bar(33,53,235,9,Color("#c56b55"))
 	mp=bar(33,68,190,6,Color("#6eccc4"))
 	place=label(hud,"",323,22,21,ivory,true)
@@ -131,7 +133,7 @@ func menu(which:String):
 		"pause","lost","won":
 			var title:String={"pause":"At rest","lost":"The oath falls","won":"The final silence"}[which]
 			label(panel,title,52,131,45,ivory,true)
-			var msg:String={"pause":"Move: WASD / arrows     Strike: J     Jump: K\nMagic: L     Special / timed counter: Shift","lost":"Return to the last encounter with restored vitality.","won":"The last bell falls silent. Dawn reaches Cinder Keep."}[which]
+			var msg:String={"pause":"Move: WASD / arrows     Strike: J     Jump: K\nMagic: L     Special / timed counter: Shift\nHold Jump for height. Press Strike in midair.","lost":"Return to the last encounter with restored vitality.","won":"The last bell falls silent. Dawn reaches Cinder Keep."}[which]
 			label(panel,msg,55,219,18,ivory)
 			if which=="won": label(panel,"Timed counters this run: %d" % arena.counters,55,270,17,gold)
 			if which=="pause":
@@ -147,13 +149,14 @@ func refresh():
 	hp.max_value=arena.hero.max_hp
 	hp.value=arena.hero.hp
 	mp.value=arena.hero.mana
+	buff.text="EMBER   +50%% damage   %ds" % ceili(arena.hero.ember_time) if arena.hero.ember_time>0 else ""
 	var index:=clampi(arena.wave if arena.locked else arena.wave+1,0,Rules.WAVES.size()-1)
 	place.text=Rules.PLACES[index]
 	hint.text="Defeat the defenders" if arena.locked else "Advance east   →"
 	if arena.counter_notice>0:
 		hint.text="Counter!   +15 magic"
 	elif arena.hero.position.x<398 and arena.wave<0:
-		hint.text="Lit grate? Change lanes or jump."
+		hint.text="Hold Jump for height. Strike in midair."
 	elif arena.locked and arena.wave==0:
 		hint.text="Face the flash. Special to counter."
 	elif arena.locked and arena.wave==1:

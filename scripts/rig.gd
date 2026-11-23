@@ -20,6 +20,7 @@ func install_frames(kind:String):
 func draw_frame() -> bool:
 	if not frames: return false
 	var clip:String=actor.move if actor.state=="attack" else actor.state
+	clip=R.ART_CLIP.get(clip,clip)
 	if actor.lift>2 and actor.state!="attack": clip="jump"
 	frames.visible=frames.sprite_frames.has_animation(clip)
 	if frames.visible:
@@ -33,6 +34,8 @@ func draw_frame() -> bool:
 		rotation=0.
 		if actor.state=="attack" and count>=4:
 			var timing:Array=R.MOVES[actor.move]
+			if actor.move in ["gale","plunge"]: rotation=actor.face*(.30 if actor.move=="plunge" else .13)
+			if actor.move=="starfall": rotation=-actor.face*.14
 			if actor.elapsed<timing[0]: frames.frame=0 if actor.elapsed<timing[0]*.28 else 1
 			else: frames.frame=2 if actor.elapsed<timing[0]+timing[1]*.69 else 3
 		elif clip=="walk":

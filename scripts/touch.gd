@@ -1,6 +1,7 @@
 extends Control
 var arena
 var finger:=-1
+var jump_finger:=-1
 var knob:=Vector2.ZERO
 const ORIGIN=Vector2(97,447)
 const BUTTONS={"attack":Vector2(874,437),"jump":Vector2(806,482),"magic":Vector2(798,398),"special":Vector2(906,349)}
@@ -14,12 +15,19 @@ func _input(event):
 			else:
 				for a in BUTTONS:
 					if event.position.distance_to(BUTTONS[a])<35:
+						if a=="jump": jump_finger=event.index
 						arena.hero.command(a)
 						break
 		elif event.index==finger:
-			reset()
+			finger=-1
+			drag(ORIGIN)
+		elif event.index==jump_finger:
+			jump_finger=-1
+			arena.hero.release_jump()
 	elif event is InputEventScreenDrag and event.index==finger: drag(event.position)
 func reset():
+	if jump_finger>=0 and arena.hero: arena.hero.release_jump()
+	jump_finger=-1
 	finger=-1
 	knob=Vector2.ZERO
 	arena.touch_vector=Vector2.ZERO

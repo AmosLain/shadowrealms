@@ -7,6 +7,7 @@ const Sound = preload("res://scripts/sound.gd")
 var hero
 var enemies: Array=[]
 var shots: Array=[]
+var moving_shots:Array=[]
 var loot: Array=[]
 var level_state:="title"
 var save_path := "user://cinder-v1.cfg"
@@ -44,11 +45,13 @@ func _unhandled_input(event):
 	if event.is_action_pressed("pause") and level_state in ["play","pause"]:
 		pause_game()
 	elif level_state=="play":
+		if event.is_action_released("jump"): hero.release_jump()
 		for action in ["attack","jump","magic","special"]:
 			if event.is_action_pressed(action): hero.command(action)
 
 func pause_game():
 	if level_state=="play":
+		hero.release_jump()
 		level_state="pause"
 		ui.menu("pause")
 	elif level_state=="pause":
@@ -89,6 +92,7 @@ func begin(stage:=0):
 		node.queue_free()
 	enemies.clear()
 	shots.clear()
+	moving_shots.clear()
 	loot.clear()
 	checkpoint=stage
 	wave=stage-1
@@ -171,6 +175,7 @@ func _physics_process(dt):
 		else:
 			drop(hero.position+Vector2(36,-5),"health")
 			drop(hero.position+Vector2(86,6),"mana")
+			if wave in [0,2,4]: drop(hero.position+Vector2(125,-4),"ember")
 			checkpoint=wave+1
 			save_journey()
 			left_bound=maxf(10.,Rules.GATES[wave]-330.)
@@ -213,6 +218,9 @@ func strike(source):
 		$Floor.add_child(rune)
 		sound.play("bell")
 		return
+	if source.move in ["starfall","fault"]:
+		launch_volley(source)
+		return
 	if source.move in ["cast","spark","peal"]:
 		var mark:=Polygon2D.new()
 		mark.polygon=PackedVector2Array([Vector2(-13,0),Vector2(-3,-6),Vector2(11,0),Vector2(-3,6)])
@@ -220,7 +228,7 @@ func strike(source):
 		road.add_child(mark)
 		mark.position=source.position
 		mark.offset.y=-40
-		shots.append([mark,source.face,1.85,source==hero,data[4]])
+		shots.append([mark,source.face,1.85,source==hero,source.attack_damage(data[4])])
 		if source.move=="peal":
 			for offset in [-34,34]:
 				var echo=mark.duplicate()
@@ -229,12 +237,12 @@ func strike(source):
 				shots.append([echo,source.face,1.85,false,data[4]])
 		sound.play("magic")
 		return
-	var radial: bool=source.move in ["magic","quake","bolt"]
+	var radial: bool=source.move in ["magic","quake","bolt","plunge"]
 	sound.play("magic" if radial else "swing")
-	if radial: fx(source.position,source.move)
+	if radial: fx(source.position,"quake" if source.move=="plunge" else source.move)
 	var targets: Array=enemies if source==hero else [hero]
 	for target in targets:
-		if target.hp<=0 or (target.lift>40 and (not radial or source.move=="quake")): continue
+		if target.hp<=0 or (target.lift>40 and source.move!="hook" and (not radial or source.move=="quake")): continue
 		# Foot-plane shape query uses this tick's transforms, including the new attack volume.
 		if (source.hit.collision_mask & target.hurt.collision_layer)==0: continue
 		var attack_shape: CollisionShape2D=source.hit.get_child(0)
@@ -243,10 +251,20 @@ func strike(source):
 			var dir:=signf(target.position.x-source.position.x)
 			var damage:int=data[4]
 			if source.kind=="swift" and source.move=="rend" and target.state=="attack": damage+=12
-			if target.damage(damage,dir*(200 if data[5] else 90),data[5]):
+			if target.damage(source.attack_damage(damage),dir*(200 if data[5] else 90),data[5]):
 				fx(target.position-Vector2(0,49),"impact")
 				sound.play("impact")
 				shake=4. if data[5] else 2.
+
+func launch_volley(source):
+	var falling:bool=source.move=="starfall"
+	var lanes:Array=[-1,0,1] if falling else [0]
+	for lane in lanes:
+		var shot=preload("res://scripts/arc_shot.gd").new()
+		shot.configure(falling,source.position,source.face,lane,source.lift,source.attack_damage(Rules.MOVES[source.move][4]))
+		road.add_child(shot)
+		moving_shots.append(shot)
+	sound.play("magic" if falling else "impact")
 
 func fx(p: Vector2,type: String):
 	var e=Effect.new()
@@ -259,11 +277,22 @@ func drop(p:Vector2,type:String):
 	var item:=Polygon2D.new()
 	item.polygon=PackedVector2Array([Vector2(-3,-16),Vector2(3,-16),Vector2(3,-12),Vector2(8,-7),Vector2(6,0),Vector2(-5,0),Vector2(-8,-6),Vector2(-3,-12)])
 	item.color=Color("#e99c85") if type=="health" else Color("#83d3d1")
+	if type=="ember":
+		item.color=Color("#ffbb53")
+		item.polygon=PackedVector2Array([Vector2(-8,-10),Vector2(0,-25),Vector2(8,-10),Vector2(0,1)])
+		var core:=Polygon2D.new()
+		core.color=Color("#fff3be")
+		core.polygon=PackedVector2Array([Vector2(0,-19),Vector2(3,-10),Vector2(0,-5),Vector2(-3,-10)])
+		item.add_child(core)
 	road.add_child(item)
 	item.position=p
 	loot.append([item,type])
 
 func step_objects(dt:float):
+	for shot in moving_shots.duplicate():
+		if shot.advance(dt,enemies if shot.friendly else [hero]):
+			moving_shots.erase(shot)
+			shot.queue_free()
 	for s in shots.duplicate():
 		s[0].position.x+=s[1]*(395. if s[3] else 268.)*dt
 		s[2]-=dt
@@ -282,6 +311,7 @@ func step_objects(dt:float):
 		item[0].offset.y=-3.+sin(landscape.clock*4)*3.
 		if hero.position.distance_to(item[0].position)<32 and hero.hp>0:
 			if item[1]=="health": hero.hp=mini(hero.max_hp,hero.hp+52)
+			elif item[1]=="ember": hero.ember_time=Rules.EMBER_SECONDS
 			else: hero.mana=minf(100,hero.mana+40)
 			sound.play("pickup")
 			item[0].queue_free()
