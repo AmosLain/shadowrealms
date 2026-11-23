@@ -1,4 +1,5 @@
 extends Node2D
+const Crosswind = preload("res://scripts/crosswind.gd")
 const Furnace = preload("res://scripts/furnace.gd")
 const Actor = preload("res://scripts/fighter.gd")
 const Rules = preload("res://scripts/rules.gd")
@@ -168,7 +169,9 @@ func _physics_process(dt):
 	counter_notice = maxf(0.0,counter_notice-dt)
 	var enraged:bool = wave==2 and not enemies.is_empty() and enemies[0].phase_two
 	for vent in $Floor.get_children():
-		if vent is Furnace and absf(hero.position.x-vent.position.x)<500:
+		if vent is Crosswind:
+			vent.step(dt)
+		elif vent is Furnace and absf(hero.position.x-vent.position.x)<500:
 			vent.step(dt,enraged)
 	if hero.hp<=0 and hero.elapsed>1.1:
 		level_state="lost"
@@ -178,6 +181,11 @@ func _physics_process(dt):
 		start_wave()
 	elif locked and enemies.is_empty():
 		locked=false
+		if wave==4:
+			for hazard in $Floor.get_children():
+				if hazard is Crosswind:
+					$Floor.remove_child(hazard)
+					hazard.queue_free()
 		if wave==Rules.WAVES.size()-1:
 			if not save_path.is_empty() and FileAccess.file_exists(save_path): DirAccess.remove_absolute(save_path)
 			level_state="won"
@@ -206,6 +214,11 @@ func start_wave():
 	var center: float=Rules.GATES[wave]
 	left_bound=center-335.
 	right_bound=center+340.
+	if wave==4:
+		var gust:=Crosswind.new()
+		gust.arena=self
+		gust.position.x=left_bound
+		$Floor.add_child(gust)
 	var n:=0
 	for type in Rules.WAVES[wave]:
 		var e=spawn(type,Vector2(center+120+n*58,365.+(n%3)*34.))
