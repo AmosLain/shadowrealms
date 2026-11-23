@@ -1,4 +1,5 @@
 extends SceneTree
+const Toll=preload("res://scripts/toll.gd")
 var game
 var moves_seen: Dictionary={}
 var frame:=0
@@ -20,6 +21,7 @@ func tap(action:String):
 	game._unhandled_input(ev)
 func run():
 	game=load("res://scenes/Keep.tscn").instantiate()
+	game.save_path=""
 	root.add_child(game)
 	press_button("Enter the keep")
 	var args:=OS.get_cmdline_user_args()
@@ -45,6 +47,7 @@ func run():
 			if e.hp<=0: continue
 			phase_seen=phase_seen or e.phase_two
 			var dist:float=h.position.distance_to(e.position)
+			if e.kind=="cantor" and game.chimes_alive(): continue
 			if dist<best:
 				target=e
 				best=dist
@@ -52,9 +55,14 @@ func run():
 		if target:
 			var gap:Vector2=target.position-h.position
 			aim=Vector2(signf(gap.x),signf(gap.y) if absf(gap.y)>8 else 0.)
-			if absf(gap.x)<98 and absf(gap.y)<30:
+			if h.kind=="seer" and absf(gap.x)<210 and absf(gap.y)<30 and h.face==signf(gap.x):
+				aim.x=0
+			if absf(gap.x)<(246 if h.kind=="seer" else 98) and absf(gap.y)<30:
 				if frame%8==0:
 					tap("magic" if frame%152==0 and h.mana>=30 else ("special" if frame%104==0 else "attack"))
+		for mark in game.get_node("Floor").get_children():
+			if mark is Toll and not mark.released and ((h.position-mark.position)/mark.RADIUS).length()<1.15:
+				aim=Vector2(0,1 if mark.position.y<397 else -1)
 		for action in ["left","right","up","down"]: Input.action_release(action)
 		if aim.x>0: Input.action_press("right")
 		if aim.x<0: Input.action_press("left")
@@ -62,5 +70,8 @@ func run():
 		if aim.y<0: Input.action_press("up")
 		if frame%1200==0: print("tick ",frame," wave ",game.wave," hp ",h.hp)
 	print("RESULT ",game.level_state," ticks=",frame," hp=",game.hero.hp," moves=",moves_seen," damage=",took_damage," phase2=",phase_seen)
-	quit(0 if game.level_state=="won" and phase_seen else 1)
+	var ok:bool=game.level_state=="won" and phase_seen
+	game.free()
+	await process_frame
+	quit(0 if ok else 1)
 

@@ -1,0 +1,28 @@
+[gd_resource type="SpriteFrames" format=3]
+
+[ext_resource type="Texture2D" path="res://art/actors/raider/poses.webp" id="1"]
+
+[sub_resource type="AtlasTexture" id="f0"]
+atlas = ExtResource("1")
+region = Rect2(0,0,192,176)
+
+[sub_resource type="AtlasTexture" id="f1"]
+atlas = ExtResource("1")
+region = Rect2(192,0,192,176)
+
+[sub_resource type="AtlasTexture" id="f2"]
+atlas = ExtResource("1")
+region = Rect2(384,0,192,176)
+
+[sub_resource type="AtlasTexture" id="f3"]
+atlas = ExtResource("1")
+region = Rect2(576,0,192,176)
+
+[resource]
+animations = [{"name":&"walk","loop":true,"speed":8.0,"frames":[{"duration":1.0,"texture":SubResource("f0")},{"duration":1.0,"texture":SubResource("f1")}]},
+{"name":&"idle","loop":true,"speed":8.0,"frames":[{"duration":1.0,"texture":SubResource("f0")}]},
+{"name":&"jump","loop":false,"speed":8.0,"frames":[{"duration":1.0,"texture":SubResource("f1")}]},
+{"name":&"hurt","loop":false,"speed":8.0,"frames":[{"duration":1.0,"texture":SubResource("f0")}]},
+{"name":&"dead","loop":false,"speed":8.0,"frames":[{"duration":1.0,"texture":SubResource("f0")}]},
+{"name":&"down","loop":false,"speed":8.0,"frames":[{"duration":1.0,"texture":SubResource("f0")}]},
+{"name":&"jab","loop":false,"speed":8.0,"frames":[{"duration":1.0,"texture":SubResource("f0")},{"duration":1.0,"texture":SubResource("f2")},{"duration":1.0,"texture":SubResource("f3")},{"duration":1.0,"texture":SubResource("f0")}]}]

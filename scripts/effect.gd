@@ -20,6 +20,14 @@ func _draw():
 		for i in 5:
 			var x:float=(i-2)*63.
 			draw_polyline(PackedVector2Array([Vector2(x-17,-182),Vector2(x+8,-104),Vector2(x-5,-111),Vector2(x+13,-44),Vector2(x+1,-51),Vector2(x,0)]),Color(.68,.91,1.,1.-p),3.,true)
+	elif kind=="counter":
+		draw_arc(Vector2.ZERO,9.+p*48.,0,TAU,34,Color(.56,1.,.90,1.-p),3.,true)
+	elif kind=="quake":
+		draw_set_transform(Vector2.ZERO,0,Vector2(1,.4))
+		for i in 12:
+			var axis:=Vector2.from_angle(i*TAU/12.)
+			var edge:=axis*(28.+p*130.)
+			draw_polyline(PackedVector2Array([axis*12.,edge*.61+Vector2(6,6),edge]), Color(1,.61,.30,1.-p),3.,true)
 	elif kind=="magic":
 		draw_set_transform(Vector2.ZERO,0,Vector2(1,.32))
 		draw_arc(Vector2.ZERO,12.+210.*p,0,TAU,52,c,4.*(1.-p)+1.,true)

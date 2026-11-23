@@ -2,6 +2,8 @@ extends RefCounted
 const HEROES = ["warden","seer","swift"]
 const NAMES = {"warden":"Orra Venn","seer":"Edrin Vey","swift":"Vessa Rill"}
 const UNITS = {
+	"chime": [58, 0, 1.18, "c7ad78", "597483"],
+	"cantor": [204, 82, 1.32, "ece0b9", "3d6670"],
 	"seer": [95, 200, 0.98, "adbdba", "374d73"],
 	"swift": [115, 229, 0.94, "b9b0a3", "413657"],
 	"warden": [150, 186, 1.05, "c69954", "244e53"],
@@ -12,6 +14,8 @@ const UNITS = {
 }
 # windup, recovery, reach, lane tolerance, damage, knockdown
 const MOVES = {
+	"toll": [.42,.87,320,25,18,false],
+	"peal": [.88,.90,340,20,12,false],
 	"spark": [.16,.26,360,24,19,false],
 	"blink": [.09,.32,85,26,14,false],
 	"bolt": [.26,.43,302,54,47,true],
@@ -33,8 +37,13 @@ const MOVES = {
 const WAVES = [
 	["raider","raider"],
 	["brute","cultist","raider"],
-	["headsman"]
+	["headsman"],
+	["chime","brute","cultist"],
+	["raider","brute","chime","raider"],
+	["cantor","chime","chime"]
 ]
-const PLACES = ["The Ash Causeway","The Broken Choir","The Sentence Gate"]
-const GATES = [540.,1350.,2190.]
+const PLACES = ["The Ash Causeway","The Broken Choir","The Sentence Gate","The Pilgrim Stairs","The Wind Gallery","The Bell Crown"]
+const GATES = [540.,1350.,2190.,3000.,3840.,4650.]
+const END_X = 5080.
+const CAMERA_END = END_X - 960.
 

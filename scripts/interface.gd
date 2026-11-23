@@ -108,13 +108,16 @@ func menu(which:String):
 		"title":
 			label(panel,"Shadow Realms",50,125,54,ivory,true)
 			label(panel,"THE ASH CAUSEWAY",55,210,20,gold)
-			label(panel,"Beyond the broken choir, the last headsman\nstill guards a gate of dying fires.",55,257,19,ivory)
+			label(panel,"The bell has called the dead home.\nCross the foundry. Silence the choir at its crown.",55,257,19,ivory)
 			button(panel,"Enter the keep",55,362,210,func(): arena.level_state="select"; menu("select")).grab_focus()
 			audio_button(55,419)
+			var slot:Dictionary=arena.read_journey()
+			if not slot.is_empty():
+				button(panel,"Continue at "+Rules.PLACES[slot.stage],275,362,270,arena.resume_journey)
 		"select":
 			label(panel,"Choose your oath",52,118,42,ivory,true)
 			label(panel,Rules.NAMES[arena.selected],55,193,32,gold,true)
-			label(panel,"Heavy warrior  ·  Two-handed blade",55,244,18,ivory)
+			label(panel,{"warden":"Heavy warrior  /  Two-handed blade","seer":"Dark mage  /  Ember staff","swift":"Agile warrior  /  Twin knives"}[arena.selected],55,244,18,ivory)
 			label(panel,{"warden":"Three chained cuts  /  Cinder cleave  /  Tide ring","seer":"Fire lance  /  Evasive step  /  Storm field","swift":"Fast cuts  /  Lunging dodge  /  Counter critical"}[arena.selected],55,285,16,ivory)
 			for i in Rules.HEROES.size():
 				var id:String=Rules.HEROES[i]
@@ -126,10 +129,11 @@ func menu(which:String):
 			preview.position=Vector2(722,407)
 			preview.scale=Vector2.ONE*2.35
 		"pause","lost","won":
-			var title:String={"pause":"At rest","lost":"The oath falls","won":"Gate unbound"}[which]
+			var title:String={"pause":"At rest","lost":"The oath falls","won":"The final silence"}[which]
 			label(panel,title,52,131,45,ivory,true)
-			var msg:String={"pause":"The causeway waits.","lost":"Return to the last encounter with restored vitality.","won":"The headsman falls. Dawn reaches Cinder Keep."}[which]
+			var msg:String={"pause":"Move: WASD / arrows     Strike: J     Jump: K\nMagic: L     Special / timed counter: Shift","lost":"Return to the last encounter with restored vitality.","won":"The last bell falls silent. Dawn reaches Cinder Keep."}[which]
 			label(panel,msg,55,219,18,ivory)
+			if which=="won": label(panel,"Timed counters this run: %d" % arena.counters,55,270,17,gold)
 			if which=="pause":
 				button(panel,"Resume",55,302,184,arena.pause_game).grab_focus()
 				audio_button(250,302)
@@ -143,15 +147,27 @@ func refresh():
 	hp.max_value=arena.hero.max_hp
 	hp.value=arena.hero.hp
 	mp.value=arena.hero.mana
-	var index:=clampi(arena.wave if arena.locked else arena.wave+1,0,2)
+	var index:=clampi(arena.wave if arena.locked else arena.wave+1,0,Rules.WAVES.size()-1)
 	place.text=Rules.PLACES[index]
 	hint.text="Defeat the defenders" if arena.locked else "Advance east   →"
-	var active:bool=arena.wave==2 and arena.locked and not arena.enemies.is_empty()
+	if arena.counter_notice>0:
+		hint.text="Counter!   +15 magic"
+	elif arena.hero.position.x<398 and arena.wave<0:
+		hint.text="Lit grate? Change lanes or jump."
+	elif arena.locked and arena.wave==0:
+		hint.text="Face the flash. Special to counter."
+	elif arena.locked and arena.wave==1:
+		hint.text="Lure the defenders onto the grate."
+	var active:bool=arena.wave in [2,5] and arena.locked and not arena.enemies.is_empty()
 	boss.visible=active
 	boss_name.visible=active
 	if active:
 		var e=arena.enemies[0]
 		boss.max_value=e.max_hp
 		boss.value=e.hp
-		boss_name.text="THE LANTERN HEADSMAN" + ("   /   UNBOUND" if e.phase_two else "")
+		if e.kind=="headsman" and arena.counter_notice<=0 and e.state=="attack":
+			hint.text="Ground shock   /   Jump!" if e.move=="quake" else "Blade sweep   /   Counter or sidestep"
+		if e.kind=="cantor":
+			hint.text="Break the two bell seals" if arena.chimes_alive() else "Dodge the chord. Strike between peals."
+		boss_name.text=("THE PALE CANTOR" if e.kind=="cantor" else "THE LANTERN HEADSMAN") + ("   /   UNBOUND" if e.phase_two else "")
 

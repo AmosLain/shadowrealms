@@ -2,6 +2,8 @@ extends Node2D
 var scroll := 0.
 var clock := 0.
 var vista: Texture2D
+var foundry: Texture2D = preload("res://art/sentence_foundry.jpg")
+var crown: Texture2D = preload("res://art/bell_crown.jpg")
 var blocks := []
 var rubble := []
 var rng := RandomNumberGenerator.new()
@@ -17,6 +19,8 @@ func _ready():
 	for i in 130:
 		rubble.append(Vector2(rng.randf_range(0,3400),rng.randf_range(328,469)))
 func _draw():
+	var sky:=smoothstep(2380.,2710.,scroll)
+	var blend:=smoothstep(1280.,1570.,scroll)
 	if vista:
 		draw_texture_rect_region(vista,Rect2(-scroll*.33,0,1610,322),Rect2(0,0,vista.get_width(),vista.get_height()*.76))
 	else:
@@ -25,6 +29,11 @@ func _draw():
 		for i in 20:
 			var x:=i*95.-scroll*.15-120
 			draw_colored_polygon(PackedVector2Array([Vector2(x-130,314),Vector2(x,82+sin(i*2.71)*45),Vector2(x+180,314)]),Color("#525e69"))
+	if blend>0.:
+		var x:= -clampf((scroll-1280.)*.31,0.,220.)
+		draw_texture_rect_region(foundry,Rect2(x,0,1190,320),Rect2(0,0,foundry.get_width(),foundry.get_height()*.781),Color(1,1,1,blend))
+	if sky>0.:
+		draw_texture_rect_region(crown,Rect2(-clampf((scroll-2380.)*.15,0.,280.),0,1250,323),Rect2(0,0,crown.get_width(),crown.get_height()*.747),Color(1,1,1,sky))
 	for i in 8:
 		var x:=i*399.-scroll*.58+130
 		if x< -60 or x>990: continue
@@ -49,6 +58,14 @@ func _draw():
 			var c:=Color("#636064").darkened(b[2]+(p.y-318)*.0010)
 			draw_colored_polygon(PackedVector2Array([p+Vector2(6,0),p+Vector2(w-2,0),p+Vector2(w-6,h),p+Vector2(-4,h-1)]),c)
 			draw_line(p+Vector2(6,0),p+Vector2(w-4,0),c.lightened(.13),1)
+	if blend>0.:
+		var shift:=fposmod(scroll,960.)
+		for tile in 2:
+			draw_texture_rect_region(foundry,Rect2(tile*960.-shift,318,961,222),Rect2(0,foundry.get_height()*.782,foundry.get_width(),foundry.get_height()*.066),Color(1,1,1,blend))
+	if sky>0.:
+		var shift:=fposmod(scroll,1080.)
+		for tile in 2:
+			draw_texture_rect_region(crown,Rect2(tile*1080.-shift,318,1081,222),Rect2(0,crown.get_height()*.747,crown.get_width(),crown.get_height()*.135),Color(1,1,1,sky))
 	for r in rubble:
 		var p: Vector2=r-Vector2(scroll,0)
 		if p.x>0 and p.x<960: draw_line(p,p+Vector2(3,-1),Color("#929091"),1)

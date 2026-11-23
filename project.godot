@@ -1,6 +1,8 @@
 config_version=5
 [application]
 config/name="Shadow Realms"
+config/icon="res://art/crest.png"
+config/version="0.2.0"
 run/main_scene="res://scenes/Keep.tscn"
 config/features=PackedStringArray("4.3", "GL Compatibility")
 [display]
@@ -10,6 +12,7 @@ window/stretch/mode="canvas_items"
 window/stretch/aspect="keep"
 window/handheld/orientation=0
 [rendering]
+textures/vram_compression/import_etc2_astc=true
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
 environment/defaults/default_clear_color=Color(0.035,0.042,0.055,1)

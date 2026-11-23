@@ -17,7 +17,8 @@
     "raider",
     "brute",
     "cultist",
-    "headsman"
+    "headsman",
+    "cantor"
   ],
   "loop": [
     "idle",
@@ -62,6 +63,11 @@
       "reap",
       "jab",
       "quake"
+    ],
+    "cantor": [
+      "cast",
+      "peal",
+      "toll"
     ]
   },
   "timing": "scripts/rules.gd MOVES columns 0 and 1 are windup and recovery in seconds. Align first contact to windup."

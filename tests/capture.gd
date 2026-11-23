@@ -5,6 +5,7 @@ func run():
 	var args:=OS.get_cmdline_user_args()
 	if args.is_empty(): quit(2); return
 	var game=load("res://scenes/Keep.tscn").instantiate()
+	game.save_path=""
 	root.add_child(game)
 	game.begin()
 	game.hero.position=Vector2(411,397)
@@ -15,21 +16,29 @@ func run():
 	for i in 10: await physics_frame
 	await RenderingServer.frame_post_draw
 	root.get_texture().get_image().save_png(args[0].path_join("combat.png"))
+	game.begin(5)
+	game.hero.position=Vector2(4540,396)
+	game.start_wave()
+	game.scroll=4080
+	for i in 5: await physics_frame
+	await RenderingServer.frame_post_draw
+	root.get_texture().get_image().save_png(args[0].path_join("crown.png"))
 	game.set_physics_process(false)
+	game.get_node("Floor").visible=false
 	game.ui.visible=false
 	game.landscape.visible=false
 	game.road.visible=false
 	var refs:=Node2D.new()
 	root.add_child(refs)
-	var role_names:=["warden","seer","swift","raider","brute","cultist","headsman"]
+	var role_names:=["warden","seer","swift","raider","brute","cultist","headsman","cantor"]
 	for i in range(role_names.size()):
 		var actor=game.spawn(role_names[i],Vector2.ZERO)
 		actor.reparent(refs)
-		actor.position=Vector2(54+i*137,344)
-		actor.scale=Vector2.ONE*1.08
+		actor.position=Vector2(54+i*117,344)
+		actor.scale=Vector2.ONE*0.90
 		var label:=Label.new()
 		label.text=role_names[i].to_upper()
-		label.position=Vector2(23+i*137,374)
+		label.position=Vector2(20+i*117,374)
 		refs.add_child(label)
 	await process_frame
 	await RenderingServer.frame_post_draw

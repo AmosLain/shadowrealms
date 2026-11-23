@@ -24,7 +24,27 @@ func draw_frame() -> bool:
 	frames.visible=frames.sprite_frames.has_animation(clip)
 	if frames.visible:
 		scale.x=absf(scale.y)*actor.face
-		if frames.animation!=clip or not frames.is_playing(): frames.play(clip)
+		frames.animation=clip
+		var count:=frames.sprite_frames.get_frame_count(clip)
+		frames.frame=0
+		frames.position=Vector2(-96,-156)
+		frames.rotation=0.
+		frames.self_modulate=Color.WHITE
+		rotation=0.
+		if actor.state=="attack" and count>=4:
+			var timing:Array=R.MOVES[actor.move]
+			if actor.elapsed<timing[0]: frames.frame=0 if actor.elapsed<timing[0]*.28 else 1
+			else: frames.frame=2 if actor.elapsed<timing[0]+timing[1]*.69 else 3
+		elif clip=="walk":
+			frames.frame=int(actor.stride*.95)%count
+			frames.position.y-=absf(sin(actor.stride))*1.8
+		elif clip=="idle":
+			frames.position.y+=sin(actor.stride)*.9
+		elif clip in ["dead","down"] and actor.kind!="warden":
+			rotation=-actor.face*1.43*smoothstep(0.,.26,actor.elapsed)
+		elif clip=="hurt":
+			rotation=-actor.face*.13
+			frames.self_modulate=Color(1.35,1.15,.95) if actor.elapsed<.10 else Color.WHITE
 	else: scale.x=absf(scale.y)
 	return frames.visible
 
@@ -54,6 +74,9 @@ func leg(hip: Vector2, foot: Vector2, near_leg: bool):
 
 func _draw():
 	if actor==null or draw_frame(): return
+	if actor.kind=="chime":
+		draw_chime()
+		return
 	steel=Color(R.UNITS[actor.kind][3])
 	cloth=Color(R.UNITS[actor.kind][4])
 	var st: String=actor.state
@@ -110,7 +133,12 @@ func _draw():
 		for j in 3:
 			stroke(-12+j*6,-2,-16+j*6,19,steel.lightened(.25),1)
 	local(Vector2(1,-93))
-	if actor.kind in ["cultist","seer"]:
+	if actor.kind=="cantor":
+		draw_arc(Vector2(0,-5),23,-2.9,1.8,36,Color("#e4ce92"),2,true)
+		for angle in [-2.9,-2.35,-1.8,-1.25,-.7]:
+			var ray:=Vector2.from_angle(angle)
+			draw_line(ray*23+Vector2(0,-5),ray*34+Vector2(0,-5),Color("#ded1aa"),2,true)
+	if actor.kind in ["cultist","seer","cantor"]:
 		plate([-14,15,-13,-3,-4,-16,9,-11,15,5,9,16,3,10,-4,9],cloth.lightened(.18))
 		plate([-7,2,4,-7,10,-2,7,9,-4,11],ink)
 	else:
@@ -138,7 +166,7 @@ func _draw():
 	stroke(10,-73,hand.x-7,hand.y+5,steel.darkened(.21),7)
 	stroke(hand.x-7,hand.y+5,hand.x,hand.y,steel,8)
 	local(hand,a)
-	if actor.kind in ["cultist","seer"]:
+	if actor.kind in ["cultist","seer","cantor"]:
 		plate([-16,-2,49,-3,58,-1,48,2,-16,2],Color("#876e55"))
 		plate([45,0,53,-12,63,-4,58,5,50,8],Color("#74c5bd"))
 	elif actor.kind in ["headsman","brute"]:
@@ -163,3 +191,14 @@ func _draw():
 		local(Vector2(0,-122))
 		plate([0,-6,4,0,0,6,-4,0],Color("#ffa66b"))
 
+
+func draw_chime():
+	var bronze:=Color("#bd9761")
+	plate([-24,0,-27,-5,-19,-12,18,-12,27,-5,24,0],Color("#675c53"))
+	plate([-17,-12,-12,-65,-7,-69,-8,-12],bronze)
+	plate([10,-12,8,-69,14,-65,17,-12],bronze.darkened(.26))
+	draw_arc(Vector2(1,-64),13,-PI,0,24,bronze,4,true)
+	draw_line(Vector2(1,-76),Vector2(1,-57),bronze,2,true)
+	plate([-12,-36,-7,-42,-6,-52,0,-57,7,-52,8,-42,14,-36],bronze)
+	draw_circle(Vector2(1,-34),3,Color("#fae0ae"))
+	draw_arc(Vector2(1,-47),22+sin(actor.stride)*2,-2.9,-.2,20,Color("#94c5c5"),1,true)

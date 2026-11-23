@@ -58,6 +58,13 @@ func box(layer: int, dimensions: Vector2) -> Area2D:
 	add_child(area)
 	return area
 
+func can_be_countered_by(attacker) -> bool:
+	if state!="attack" or did_hit or move not in ["jab","crush","reap"]: return false
+	var data:Array=Rules.MOVES[move]
+	var until_hit:float=data[0]-elapsed
+	var gap:Vector2=attacker.position-position
+	return until_hit>=0 and until_hit<=0.22 and gap.x*face>=-8 and absf(gap.x)<=data[2]+12 and absf(gap.y)<=data[3] and attacker.face==-face and attacker.lift<35
+
 func command(action: String):
 	if hp <= 0: return
 	queued = action
@@ -99,7 +106,7 @@ func step(dt: float, direction: Vector2):
 		if elapsed >= ending or (playable and move in ["cut","return","nick","cross"] and queued=="attack" and buffer>0 and elapsed>ending-.09):
 			state = "idle"
 			chain = .36
-			cooldown = .43 if phase_two else .70
+			cooldown = 3.0 if kind=="chime" else (.43 if phase_two else .70)
 	else:
 		if playable:
 			if absf(direction.x)>.1: face = 1 if direction.x>0 else -1
@@ -114,6 +121,7 @@ func step(dt: float, direction: Vector2):
 						else: start_move(["cut","return","cleave"][combo])
 						combo=(combo+1)%3
 					"special":
+						arena.counter(self)
 						if kind=="warden": start_move("special")
 						else:
 							start_move("blink" if kind=="seer" else "lunge")
@@ -141,7 +149,11 @@ func step(dt: float, direction: Vector2):
 func think() -> Vector2:
 	var delta_pos: Vector2 = arena.hero.position-position
 	face = 1 if delta_pos.x>=0 else -1
-	var ranged := kind=="cultist"
+	if kind=="chime":
+		if cooldown<=0. and absf(delta_pos.x)<175. and absf(delta_pos.y)<28.:
+			start_move("cast")
+		return Vector2.ZERO
+	var ranged := kind in ["cultist","cantor"]
 	var reach := 245. if ranged else (96. if kind=="headsman" else 58.)
 	var direction := Vector2.ZERO
 	if absf(delta_pos.x)>reach: direction.x = face
@@ -157,15 +169,19 @@ func think() -> Vector2:
 		match kind:
 			"brute": start_move("crush")
 			"cultist": start_move("cast")
+			"cantor": start_move("toll" if pattern%3==1 else ("peal" if phase_two or pattern%2==0 else "cast"))
 			"headsman": start_move("quake" if pattern%3==0 else ("jab" if phase_two and pattern%2==0 else "reap"))
 			_: start_move("jab")
 	return direction.limit_length()
 
 func damage(amount: int, push: float, knockdown: bool) -> bool:
 	if hp<=0 or invincible>0.: return false
+	if kind=="cantor" and arena.chimes_alive():
+		arena.fx(position-Vector2(0,61),"counter")
+		return false
 	hp = maxi(0,hp-amount)
-	phase_two = kind=="headsman" and hp<=max_hp/2
-	recoil = push
+	phase_two = kind in ["headsman","cantor"] and hp<=max_hp/2
+	recoil = 0.0 if kind=="chime" else push
 	if hp==0: state="dead"
 	elif kind!="headsman" or state!="attack":
 		state="down" if knockdown else "hurt"
@@ -185,9 +201,13 @@ func _draw():
 		var start:float=-r if face<0 or move=="quake" else 0.
 		var span:=r*2 if move=="quake" else r
 		var lane:float=d[3]
+		if move in ["jab","crush","reap"] and float(d[0])-elapsed<=0.22:
+			draw_arc(Vector2(0,-118),13,-PI,PI,24,Color("#b7fff0"),3,true)
 		var danger:=Color(.92,.36,.22,.14)
 		draw_rect(Rect2(start,-lane,span,lane*2.),danger)
 		draw_line(Vector2(start,lane),Vector2(start+span*clampf(elapsed/d[0],0,1),lane),Color(.97,.59,.34,.75),2)
+	if kind=="cantor" and hp>0 and arena.chimes_alive():
+		draw_arc(Vector2(0,-66),62.,-PI,PI,56,Color(.58,.91,.92,.65),2,true)
 	if not playable and hp>0 and hp<max_hp and kind!="headsman":
 		draw_rect(Rect2(-18,-132,36,3),Color("#272427"))
 		draw_rect(Rect2(-18,-132,36.*hp/max_hp,3),Color("#d6956f"))
