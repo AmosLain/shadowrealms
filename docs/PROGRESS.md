@@ -9,3 +9,7 @@ The opening pair can now take turns winding up while the second raider moves out
 ## Hook warning
 
 The raider lowers its stance before its anti-air hook. A rising glint follows the upward line, distinct from the jab's circular counter cue. The graphical comparison used identical actors, camera and windup times. All 16 air_combat checks passed.
+
+## Thumbstick precision
+
+A thumb displaced six pixels from center previously changed facing and moved the hero. The stick now remaps its inner eight pixels to rest and ramps continuously to full speed. Viewport-dispatched touch tests passed 5/5, resume passed 4/4 and shoulder controls passed 17/17.

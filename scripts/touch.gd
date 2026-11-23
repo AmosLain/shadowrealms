@@ -5,6 +5,8 @@ var jump_finger:=-1
 var stick_side:=0
 var knob:=Vector2.ZERO
 const ORIGIN=Vector2(97,447)
+const STICK_RADIUS:=48.0
+const STICK_DEAD_ZONE:=8.0
 const BUTTONS={"attack":Vector2(874,437),"jump":Vector2(806,482),"magic":Vector2(798,398),"special":Vector2(906,349)}
 func _input(event):
 	if not visible or arena.level_state!="play": return
@@ -37,12 +39,13 @@ func reset():
 	arena.touch_vector=Vector2.ZERO
 	queue_redraw()
 func drag(p:Vector2):
-	knob=(p-ORIGIN).limit_length(48)
+	knob=(p-ORIGIN).limit_length(STICK_RADIUS)
 	if absf(knob.x)>=27 and (stick_side==0 or signf(knob.x)!=stick_side):
 		stick_side=int(signf(knob.x))
 		arena.hero.tap_horizontal(stick_side)
 	elif absf(knob.x)<12: stick_side=0
-	arena.touch_vector=knob/48.
+	var strength:=maxf(0.,(knob.length()-STICK_DEAD_ZONE)/(STICK_RADIUS-STICK_DEAD_ZONE))
+	arena.touch_vector=knob.normalized()*strength
 	queue_redraw()
 func _draw():
 	draw_circle(ORIGIN,61,Color(.06,.10,.12,.55))
