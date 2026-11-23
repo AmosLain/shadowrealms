@@ -51,10 +51,13 @@ func _unhandled_input(event):
 		for action in ["attack","jump","magic","special"]:
 			if event.is_action_pressed(action): hero.command(action)
 
+func _notification(what:int):
+	if what==NOTIFICATION_APPLICATION_FOCUS_OUT and level_state=="play":
+		pause_game()
+
 func pause_game():
 	if level_state=="play":
-		hero.release_jump()
-		hero.reset_run()
+		hero.clear_pending_input()
 		level_state="pause"
 		ui.menu("pause")
 	elif level_state=="pause":

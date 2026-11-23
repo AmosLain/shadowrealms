@@ -16,7 +16,9 @@ func _input(event):
 			else:
 				for a in BUTTONS:
 					if event.position.distance_to(BUTTONS[a])<35:
-						if a=="jump": jump_finger=event.index
+						if a=="jump":
+							if jump_finger>=0: break
+							jump_finger=event.index
 						arena.hero.command(a)
 						break
 		elif event.index==finger:

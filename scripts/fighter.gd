@@ -111,6 +111,13 @@ func command(action: String):
 	queued = action
 	buffer = .32
 
+func clear_pending_input():
+	release_jump()
+	reset_run()
+	jump_buffer=0.
+	queued=""
+	buffer=0.
+
 func start_move(action: String):
 	reset_run()
 	shoulder_contact=false
