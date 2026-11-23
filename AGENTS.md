@@ -27,3 +27,7 @@ Run each behavior suite in tests with the same flags as checks.gd. Repeat playth
 ## Checkpoint and continuation
 
 Read docs/PROGRESS.md and docs/ROADMAP.md before selecting work. Reproduce the issue, implement one bounded improvement and add a failing-before regression when behavior changes. Inspect a normal gameplay path, capture visual changes, run the affected tests and all hero campaigns after combat changes. Record evidence and remaining uncertainty. Commit a focused checkpoint and update the backlog. Preserve the source worktree, save compatibility and licenses. Keep generated builds and signing material outside Git. Use a local checkpoint branch. Release publication requires separate authorization.
+
+### Proposed recurring run
+
+Use an existing-chat heartbeat and the dedicated development/cinder-keep worktree. Confirm the branch, repository and clean starting state with git worktree list and git status before writing. If the worktree is in use or has unexpected changes, report and skip that run. Choose one ready backlog item. Assign bounded ownership, reproduce it, implement, validate and capture evidence. Commit locally and update both development documents. Stop after one verified checkpoint or a concrete blocker. Do not publish builds, merge branches, enable additional schedules or call paid APIs. The durable handoff is the branch tip and these two documents.
