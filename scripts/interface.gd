@@ -190,6 +190,8 @@ func refresh():
 		hint.text="Face the flash. Special to counter."
 	elif arena.locked and arena.wave==1:
 		hint.text="Lure the defenders onto the grate."
+	if arena.hero.kind=="warden" and arena.hero.combo==2 and arena.hero.move=="return" and arena.grabbable_raider(arena.hero)!=null:
+		hint.text="Hold toward the raider + ATTACK to throw" if touch_controls else "Hold toward the raider + J to throw"
 	var active:bool=arena.wave in [2,5] and arena.locked and not arena.enemies.is_empty()
 	boss.visible=active
 	boss_name.visible=active

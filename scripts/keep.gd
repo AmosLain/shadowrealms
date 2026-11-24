@@ -340,6 +340,8 @@ func strike(source):
 			var damage:int=data[4]
 			if source.kind=="swift" and source.move=="rend" and target.state=="attack": damage+=12
 			if target.damage(source.attack_damage(damage),dir*(200 if data[5] else 90),data[5]):
+				if source.kind=="warden" and source.move=="return" and target.kind=="raider" and target.state=="hurt":
+					target.grab_window=.48
 				if not radial:
 					var hold:=.050 if data[5] else .033
 					source.impact_hold=maxf(source.impact_hold,hold)
@@ -347,6 +349,44 @@ func strike(source):
 				fx(target.position-Vector2(0,49),"impact")
 				sound.play("impact")
 				shake=4. if data[5] else 2.
+
+func grabbable_raider(source):
+	var closest=null
+	var reach:float=Rules.MOVES["throw"][2]
+	for enemy in enemies:
+		if enemy.grab_window<=0 or enemy.state!="hurt" or enemy.lift>0: continue
+		var gap:Vector2=enemy.position-source.position
+		var forward:float=gap.x*source.face
+		if forward<0 or forward>reach or absf(gap.y)>Rules.MOVES["throw"][3]: continue
+		closest=enemy
+		reach=forward
+	return closest
+
+func grab_raider(source) -> bool:
+	var closest=grabbable_raider(source)
+	if closest==null: return false
+	source.start_move("throw")
+	source.combo=0
+	closest.state="held"
+	closest.grab_window=0.
+	closest.thrower=source
+	closest.elapsed=0.
+	closest.recoil=0.
+	closest.face=-source.face
+	return true
+
+func thrown_contact(body, previous_x:float):
+	for enemy in enemies:
+		if enemy==body or enemy.hp<=0 or enemy.lift>38 or absf(enemy.position.y-body.position.y)>22: continue
+		var forward:float=(enemy.position.x-previous_x)*body.knockback_side
+		if forward<0 or forward>absf(body.position.x-previous_x)+22.: continue
+		if enemy.damage(body.throw_damage,body.knockback_side*225.,true):
+			body.recoil*=.30
+			body.struck_bystander=true
+			sound.play("impact")
+			fx(enemy.position-Vector2(0,48),"impact")
+			shake=4.
+			return
 
 func launch_volley(source):
 	var falling:bool=source.move=="starfall"

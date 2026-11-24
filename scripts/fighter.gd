@@ -31,6 +31,10 @@ var tap_left := 0.0
 var run_dir := 0
 var run_distance := 0.0
 var shoulder_contact := false
+var grab_window:=0.
+var thrower
+var throw_damage:=0
+var struck_bystander:=false
 
 func tap_horizontal(dir:int):
 	if kind!="warden" or hp<=0 or lift>0 or state not in ["idle","walk"]: return
@@ -151,12 +155,38 @@ func step(dt: float, direction: Vector2):
 		rise -= 800.*dt
 		lift = maxf(0.,lift+rise*dt)
 	if lift<=0.: air_spent=false
+	var previous_x_before_recoil:=position.x
 	position.x += recoil*dt
 	recoil = move_toward(recoil,0.,680.*dt)
 	if state == "dead":
 		modulate.a = clampf(1.7-elapsed,0.,1.)
+	elif state=="held":
+		if thrower.state!="attack" or thrower.move!="throw":
+			state="down"
+			elapsed=0.
+			thrower=null
+		else:
+			var grip:Vector2=thrower.position+Vector2(thrower.face*27.,0.)
+			position=position.move_toward(grip,460.*dt)
+			lift=14.*smoothstep(0.,.16,thrower.elapsed)
+			if thrower.did_hit:
+				state="thrown"
+				knockback_side=thrower.face
+				recoil=thrower.face*510.
+				rise=155.
+				throw_damage=thrower.attack_damage(Rules.MOVES["throw"][4])
+				struck_bystander=false
+				elapsed=0.
+				thrower=null
+	elif state=="thrown":
+		position.x=clampf(position.x,arena.left_bound,arena.right_bound)
+		if not struck_bystander: arena.thrown_contact(self,previous_x_before_recoil)
+		if lift<=0:
+			damage(throw_damage,knockback_side*85.,true)
+			arena.fx(position,"dust")
 	elif state in ["hurt","down"]:
-		if elapsed > (.68 if state=="down" else .24):
+		grab_window=maxf(0.,grab_window-dt)
+		if grab_window<=0. and elapsed > (.68 if state=="down" else .24):
 			state = "idle"
 	elif state == "attack":
 		var data: Array = Rules.MOVES[move]
@@ -181,7 +211,8 @@ func step(dt: float, direction: Vector2):
 				arena.opening_cut(self,minf(elapsed,Rules.CUT_RELEASE-.0001))
 		elif ready_to_hit and not did_hit:
 			did_hit = true
-			arena.strike(self)
+			if move=="throw": arena.sound.play("swing")
+			else: arena.strike(self)
 			if move=="plunge": elapsed=data[0]
 		var ending := float(data[0])+float(data[1])
 		if (did_hit and elapsed >= ending) or (playable and move in ["cut","return","nick","cross"] and queued=="attack" and buffer>0 and elapsed>ending-.09):
@@ -208,6 +239,8 @@ func step(dt: float, direction: Vector2):
 								if move=="gale":
 									recoil=face*500.
 									rise=minf(rise,-80.)
+						elif kind=="warden" and combo==2 and chain>0 and direction.x*face>.45 and arena.grab_raider(self):
+							pass # grab_raider starts the move only on confirmed contact.
 						elif run_dir!=0 and run_distance>=Rules.SHOULDER_RUNUP:
 							start_move("shoulder")
 							combo=0
@@ -297,6 +330,8 @@ func damage(amount: int, push: float, knockdown: bool) -> bool:
 		arena.fx(position-Vector2(0,61),"counter")
 		return false
 	reset_run()
+	grab_window=0.
+	thrower=null
 	hp = maxi(0,hp-amount)
 	phase_two = kind in ["headsman","cantor"] and hp<=max_hp/2
 	knockback_side = signf(push) if push != 0. else -float(face)
@@ -331,6 +366,8 @@ func _draw():
 		draw_line(Vector2(start,lane),Vector2(start+span*clampf(elapsed/d[0],0,1),lane),Color(.97,.59,.34,.75),2)
 	if kind=="cantor" and hp>0 and arena.chimes_alive():
 		draw_arc(Vector2(0,-66),62.,-PI,PI,56,Color(.58,.91,.92,.65),2,true)
+	if grab_window>0 and state=="hurt":
+		draw_arc(Vector2(0,-111),8.,.15,PI-.15,12,Color("#99ecbd"),3.,true)
 	if not playable and hp>0 and hp<max_hp and kind!="headsman":
 		draw_rect(Rect2(-18,-132,36,3),Color("#272427"))
 		draw_rect(Rect2(-18,-132,36.*hp/max_hp,3),Color("#d6956f"))
