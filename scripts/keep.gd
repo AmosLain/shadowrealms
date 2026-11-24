@@ -186,9 +186,9 @@ func _physics_process(dt):
 		level_state="lost"
 		ui.menu("lost")
 		return
-	if not locked and wave+1<Rules.WAVES.size() and hero.position.x>=Rules.GATES[wave+1]-240.:
+	if hero.hp>0 and not locked and wave+1<Rules.WAVES.size() and hero.position.x>=Rules.GATES[wave+1]-240.:
 		start_wave()
-	elif locked and enemies.is_empty():
+	elif hero.hp>0 and locked and enemies.is_empty():
 		locked=false
 		if wave==4:
 			for hazard in $Floor.get_children():
