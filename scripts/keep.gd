@@ -6,6 +6,7 @@ const Rules = preload("res://scripts/rules.gd")
 const Effect = preload("res://scripts/effect.gd")
 const Sound = preload("res://scripts/sound.gd")
 var hero
+var ward_links
 var raider_marker
 var enemies: Array=[]
 var shots: Array=[]
@@ -106,6 +107,7 @@ func begin(stage:=0, banked_counters:=0):
 	shots.clear()
 	moving_shots.clear()
 	loot.clear()
+	ward_links=null
 	checkpoint=stage
 	wave=stage-1
 	locked=false
@@ -170,6 +172,7 @@ func _physics_process(dt):
 		if enemy.hp==0 and enemy.elapsed>1.6:
 			enemies.erase(enemy)
 			enemy.queue_free()
+	if ward_links: ward_links.queue_redraw()
 	raider_marker.queue_redraw()
 	step_objects(dt)
 	counter_notice = maxf(0.0,counter_notice-dt)
@@ -233,6 +236,12 @@ func start_wave():
 		e.cooldown=.4+n*.3
 		enemies.append(e)
 		n+=1
+	if wave==Rules.WAVES.size()-1:
+		ward_links=preload("res://scripts/crown_ward.gd").new()
+		for enemy in enemies:
+			if enemy.kind=="cantor": ward_links.cantor=enemy
+			if enemy.kind=="chime": ward_links.seals.append(enemy)
+		$Floor.add_child(ward_links)
 
 func chimes_alive() -> bool:
 	for enemy in enemies:
