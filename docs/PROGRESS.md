@@ -31,3 +31,9 @@ Pause shows instructions for the device control scheme and selected hero. Orra's
 Godot 4.7.2 imported the integrated worktree. Eleven behavior suites passed 150 assertions including a writable disposable disk slot. All three six-gate campaigns reached victory and boss phase two (Orra 3045 ticks, Vessa 2354 and Edrin 3153). A separate pair of processes saved and resumed Vessa at The Broken Choir with one earned counter; all five checks passed. A 495-tick opening-wave capture showed alternating windups with residual sprite overlap at the handoff. OpenGL captures cover the raider cues, formation, touch stick, controls help and gallery gust. Touch input was simulated on Windows. ADB was unavailable here.
 
 The next cycle addresses raider handoff readability. Recurring runs await owner approval.
+
+## Combat clarity and encounter outcomes, 2026-11-24
+
+A foreground marker follows the raider currently winding up. The original hook trajectory and timed-counter signal still show the attack type. Captured the handoff in the center and at both lane edges at 480 by 270. In the Bell Crown, illuminated lines connect each surviving seal to the cantor and the HUD changes when the first seal falls. Captured two, one and zero sources. The four ordinary/final-gate defeat assertions failed before the fix and now pass. A dead hero cannot claim the gate or its rewards while the death animation runs.
+
+The integrated Godot run passed 157 assertions and all three complete six-encounter campaigns. Physical Android playtesting remains open.

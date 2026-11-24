@@ -200,6 +200,11 @@ func refresh():
 		if e.kind=="headsman" and arena.counter_notice<=0 and e.state=="attack":
 			hint.text="Ground shock   /   Jump!" if e.move=="quake" else "Blade sweep   /   Counter or sidestep"
 		if e.kind=="cantor":
-			hint.text="Break the two bell seals" if arena.chimes_alive() else "Dodge the chord. Strike between peals."
+			var remaining:=0
+			for unit in arena.enemies:
+				if unit.kind=="chime" and unit.hp>0: remaining+=1
+			if remaining>=2: hint.text="Break the two bell seals"
+			elif remaining==1: hint.text="Break the last bell seal"
+			else: hint.text="Dodge the chord. Strike between peals."
 		boss_name.text=("THE PALE CANTOR" if e.kind=="cantor" else "THE LANTERN HEADSMAN") + ("   /   UNBOUND" if e.phase_two else "")
 
