@@ -6,6 +6,7 @@ const Rules = preload("res://scripts/rules.gd")
 const Effect = preload("res://scripts/effect.gd")
 const Sound = preload("res://scripts/sound.gd")
 var hero
+var raider_marker
 var enemies: Array=[]
 var shots: Array=[]
 var moving_shots:Array=[]
@@ -113,6 +114,10 @@ func begin(stage:=0, banked_counters:=0):
 	level_state="play"
 	touch_vector=Vector2.ZERO
 	hero=spawn(selected,Vector2(135 if stage==0 else Rules.GATES[stage]-300,405))
+	raider_marker=preload("res://scripts/raider_marker.gd").new()
+	raider_marker.arena=self
+	raider_marker.z_index=2
+	road.add_child(raider_marker)
 	place_vent(Vector2(274,354),0.25)
 	place_vent(Vector2(1390,399),0.55)
 	place_vent(Vector2(2130,374),0.35)
@@ -165,6 +170,7 @@ func _physics_process(dt):
 		if enemy.hp==0 and enemy.elapsed>1.6:
 			enemies.erase(enemy)
 			enemy.queue_free()
+	raider_marker.queue_redraw()
 	step_objects(dt)
 	counter_notice = maxf(0.0,counter_notice-dt)
 	var enraged:bool = wave==2 and not enemies.is_empty() and enemies[0].phase_two
