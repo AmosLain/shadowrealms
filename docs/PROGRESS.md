@@ -37,3 +37,7 @@ The next cycle addresses raider handoff readability. Recurring runs await owner 
 A foreground marker follows the raider currently winding up. The original hook trajectory and timed-counter signal still show the attack type. Captured the handoff in the center and at both lane edges at 480 by 270. In the Bell Crown, illuminated lines connect each surviving seal to the cantor and the HUD changes when the first seal falls. Captured two, one and zero sources. The four ordinary/final-gate defeat assertions failed before the fix and now pass. A dead hero cannot claim the gate or its rewards while the death animation runs.
 
 The integrated Godot run passed 157 assertions and all three complete six-encounter campaigns. Physical Android playtesting remains open.
+
+## Orra's stagger throw
+
+The second cut opens a short grab window on a surviving grounded raider. A green cue and contextual control hint appear in reach. A directional third Strike clinches, lifts and launches the victim. One same-lane collision can knock down a second enemy. Neutral Strike keeps the cleave. New atlas poses cover grip, release and tumble. Sixteen regression assertions cover both directions, exact secondary impact count, cross-lane miss, touch input and interruption. All 173 behavior assertions and three hero campaigns passed. A graphical recording verified a second raider taking 12 damage.

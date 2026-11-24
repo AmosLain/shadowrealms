@@ -85,7 +85,7 @@ func draw_frame() -> bool:
 	if tackle_skin: tackle_skin.visible=false
 	var clip:String=actor.move if actor.state=="attack" else actor.state
 	clip=R.ART_CLIP.get(clip,clip)
-	if actor.lift>2 and actor.state!="attack": clip="jump"
+	if actor.lift>2 and actor.state not in ["attack","held","thrown"]: clip="jump"
 	frames.visible=frames.sprite_frames.has_animation(clip)
 	if frames.visible:
 		scale.x=absf(scale.y)*actor.face
@@ -105,6 +105,16 @@ func draw_frame() -> bool:
 			else: frames.frame=2 if actor.elapsed<timing[0]+timing[1]*.69 else 3
 			if actor.move=="cut": frames.frame=R.cut_frame(actor.elapsed)
 			if actor.move=="hook": pose_hook(timing[0])
+		elif actor.state in ["held","thrown"]:
+			var heft:=smoothstep(0.,R.MOVES["throw"][0],actor.elapsed)
+			var tumble:=smoothstep(0.,.33,actor.elapsed)
+			var angle:=lerpf(.28,1.03,heft) if actor.state=="held" else lerpf(1.03,-1.45,tumble)
+			var tuck:=heft if actor.state=="held" else 1.-tumble
+			frames.rotation=angle
+			frames.scale=Vector2(1.,1.-.17*tuck)
+			# Rotate about the belly. Turning about the foot would make the
+			# raider orbit past the collision lane during flight.
+			frames.position=Vector2(0,-62.-11.*tuck)+(Vector2(-96,-94)*frames.scale).rotated(angle)
 		elif clip=="walk":
 			if actor.run_dir!=0: rotation=actor.face*.12
 			frames.frame=int(actor.stride*.95)%count
@@ -149,6 +159,36 @@ func draw_hook_cue():
 	var spark:=Vector2(42,-50).bezier_interpolate(Vector2(55,-56),Vector2(68,-90),tip,progress)
 	draw_circle(spark,4.,Color("#fff2df"))
 
+# Use the original two-handed grips. Draw the three horizontal strips on
+# either side of the blade so an unarmed throw still reads as a grapple.
+func draw_throw():
+	var t:float=actor.elapsed
+	var release:float=R.MOVES["throw"][0]
+	var ending:float=release+R.MOVES["throw"][1]
+	var rise:=smoothstep(.035,release,t)
+	var follow:=1.-smoothstep(release+.06,ending,t)
+	var stretch:=Vector2(1.,1.-.16*(1.-rise)+.035*rise*follow)
+	var pose:AtlasTexture
+	var grip_band:Rect2
+	if t<release*.63:
+		pose=frames.sprite_frames.get_frame_texture("cut",1)
+		grip_band=Rect2(0,70,121,26)
+	elif t<release:
+		pose=frames.sprite_frames.get_frame_texture("cleave",1)
+		grip_band=Rect2(88,28,104,41)
+	elif t<ending-.09:
+		pose=frames.sprite_frames.get_frame_texture("cut",2)
+		grip_band=Rect2(0,67,134,25)
+	else:
+		pose=frames.sprite_frames.get_frame_texture("cut",1)
+		grip_band=Rect2(0,70,121,26)
+	var lean:=.08*(1.-rise)-.09*rise*follow
+	draw_set_transform(Vector2(3.*follow,0),lean,stretch)
+	for strip in [Rect2(0,0,192,grip_band.position.y),grip_band,
+			Rect2(0,grip_band.end.y,192,176.-grip_band.end.y)]:
+		draw_texture_rect_region(pose.atlas,Rect2(Vector2(-96,-156)+strip.position,strip.size),
+			Rect2(pose.region.position+strip.position,strip.size))
+
 func local(point: Vector2, angle := 0.):
 	draw_set_transform(shift + (point.rotated(tilt)*mirror), (angle+tilt)*mirror.x, mirror)
 
@@ -175,6 +215,13 @@ func leg(hip: Vector2, foot: Vector2, near_leg: bool):
 
 func _draw():
 	if actor==null: return
+	if actor.state=="attack" and actor.move=="throw" and frames:
+		frames.hide()
+		if tackle_skin: tackle_skin.hide()
+		scale.x=absf(scale.y)*actor.face
+		rotation=0.
+		draw_throw()
+		return
 	if draw_frame():
 		if actor.state=="attack" and actor.move=="hook" and not actor.did_hit:
 			if actor.elapsed<R.MOVES.hook[0]: draw_hook_cue()
