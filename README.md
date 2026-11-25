@@ -31,7 +31,7 @@ On touchscreens use the left stick and the four labeled buttons. Controls scale 
 
 ## Orra's raider throw
 
-Land the second sword cut on a nearby raider. While the green stagger cue is visible, hold toward that raider and press Strike again (J on keyboard, ATTACK on touch). Orra pulls the raider close and throws them forward. Line up a second enemy in the same lane to knock them down. A neutral third Strike finishes the sword chain with a cleave.
+Walk into a grounded raider in the same lane with Orra. On contact she automatically grabs, turns toward the raider and throws them forward. No attack button is required. Line up another enemy to knock them down. Outside body contact, Strike keeps the normal sword chain.
 
 ## Orra's running shoulder
 

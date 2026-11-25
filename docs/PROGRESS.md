@@ -41,3 +41,7 @@ The integrated Godot run passed 157 assertions and all three complete six-encoun
 ## Orra's stagger throw
 
 The second cut opens a short grab window on a surviving grounded raider. A green cue and contextual control hint appear in reach. A directional third Strike clinches, lifts and launches the victim. One same-lane collision can knock down a second enemy. Neutral Strike keeps the cleave. New atlas poses cover grip, release and tumble. Sixteen regression assertions cover both directions, exact secondary impact count, cross-lane miss, touch input and interruption. All 173 behavior assertions and three hero campaigns passed. A graphical recording verified a second raider taking 12 damage.
+
+## Automatic contact throw
+
+The stagger-and-third-strike input has been replaced by automatic ground contact for Orra. Ground movement and enemy movement both resolve before checking the two foot-plane body shapes. Capture starts on overlap from either side and release takes 0.10 seconds. The regression covers both directions, two lanes, touch-stick movement without a button press, and interrupted grips. The integrated run passed 176 assertions and all three hero campaigns.

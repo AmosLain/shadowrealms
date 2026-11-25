@@ -173,6 +173,8 @@ func _physics_process(dt):
 			enemies.erase(enemy)
 			enemy.queue_free()
 	if ward_links: ward_links.queue_redraw()
+	if hero.kind=="warden" and hero.state in ["idle","walk"] and hero.lift<=0. and hero.rise<=0. and hero.impact_hold<=0.:
+		grab_touching_raider(hero)
 	raider_marker.queue_redraw()
 	step_objects(dt)
 	counter_notice = maxf(0.0,counter_notice-dt)
@@ -340,8 +342,6 @@ func strike(source):
 			var damage:int=data[4]
 			if source.kind=="swift" and source.move=="rend" and target.state=="attack": damage+=12
 			if target.damage(source.attack_damage(damage),dir*(200 if data[5] else 90),data[5]):
-				if source.kind=="warden" and source.move=="return" and target.kind=="raider" and target.state=="hurt":
-					target.grab_window=.48
 				if not radial:
 					var hold:=.050 if data[5] else .033
 					source.impact_hold=maxf(source.impact_hold,hold)
@@ -350,30 +350,31 @@ func strike(source):
 				sound.play("impact")
 				shake=4. if data[5] else 2.
 
-func grabbable_raider(source):
+func grab_touching_raider(source):
 	var closest=null
-	var reach:float=Rules.MOVES["throw"][2]
+	var nearest_distance:=INF
+	var hero_body:CollisionShape2D=source.hurt.get_child(0)
 	for enemy in enemies:
-		if enemy.grab_window<=0 or enemy.state!="hurt" or enemy.lift>0: continue
-		var gap:Vector2=enemy.position-source.position
-		var forward:float=gap.x*source.face
-		if forward<0 or forward>reach or absf(gap.y)>Rules.MOVES["throw"][3]: continue
-		closest=enemy
-		reach=forward
-	return closest
-
-func grab_raider(source) -> bool:
-	var closest=grabbable_raider(source)
-	if closest==null: return false
+		if enemy.kind!="raider" or enemy.hp<=0 or enemy.state not in ["idle","walk","hurt","attack"]: continue
+		if enemy.lift>0. or enemy.impact_hold>0.: continue
+		var body:CollisionShape2D=enemy.hurt.get_child(0)
+		if not hero_body.shape.collide(hero_body.global_transform,body.shape,body.global_transform): continue
+		var distance:float=source.position.distance_squared_to(enemy.position)
+		if distance<nearest_distance:
+			nearest_distance=distance
+			closest=enemy
+	if closest==null: return
+	if closest.position.x!=source.position.x:
+		source.face=1 if closest.position.x>source.position.x else -1
 	source.start_move("throw")
 	source.combo=0
 	closest.state="held"
-	closest.grab_window=0.
 	closest.thrower=source
 	closest.elapsed=0.
 	closest.recoil=0.
 	closest.face=-source.face
-	return true
+	closest.rig.queue_redraw()
+	source.rig.queue_redraw()
 
 func thrown_contact(body, previous_x:float):
 	for enemy in enemies:

@@ -33,7 +33,7 @@ static func cut_travel(t: float) -> float:
 	return -2.*smoothstep(0.,.06,t) + 16.*smoothstep(.065,CUT_EXTENSION,t) + 3.*smoothstep(CUT_EXTENSION,.225,t)
 
 const MOVES = {
-	"throw": [.16,.28,62,24,12,true],
+	"throw": [.10,.28,0,0,12,true],
 	"shoulder": [.075,.405,30,12,22,true],
 	"plunge": [.08,.36,110,41,32,true],
 	"starfall": [.13,.25,300,28,17,false],
